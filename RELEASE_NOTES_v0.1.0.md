@@ -1,4 +1,4 @@
-# novel-studio v0.1.0
+# Novel Studio v0.1.0
 
 首个公开测试版。
 
