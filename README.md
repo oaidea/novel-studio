@@ -1,8 +1,8 @@
 # Novel Studio / 小说创作工作台
 
-A unified fiction-writing skill for **project setup, worldbuilding, outlining, chapter writing, serialization management, review, style polishing, and writing training**.
+A unified fiction-writing skill for **project setup, worldbuilding, outlining, chapter writing, serialization management, review, style polishing, writing training, and reusable style-library workflows**.
 
-一个统一的小说创作技能，覆盖：**立项、设定、大纲、章节写作、连载管理、审校、润色，以及写作学习训练**。
+一个统一的小说创作技能，覆盖：**立项、设定、大纲、章节写作、连载管理、审校、润色、写作学习训练，以及可复用的风格库工作流**。
 
 It is not a black-box tool that “writes the whole novel for you”. It is a more stable workspace for long-form fiction projects:
 
@@ -54,20 +54,26 @@ It is not a black-box tool that “writes the whole novel for you”. It is a mo
 - chapter progression checklist / 章节推进检查表
 - motivation change tracking / 角色动机变化表
 
+### 8. Style Library Workflow (v0.3.0) / 风格库工作流（v0.3.0）
+- extract reusable style cards / 提炼可复用风格卡
+- convert style studies into prompts / 将风格研究转成可执行提示词
+- store style assets under references / 把风格资产沉淀到 references 中
+- support sub-cards such as dialogue-only profiles / 支持对白专项等子风格卡
+
 ---
 
-## v0.2.0 Highlights / v0.2.0 更新亮点
+## v0.3.0 Highlights / v0.3.0 更新亮点
 
 This release focuses on:
 
 本次版本重点升级：
 
-- **Learning Mode / 学习模式**
-- **Structured writing templates / 结构化写作模板**
-- **Updated skill package and release notes / 更新后的技能包与版本说明**
+- **Style Library Workflow / 风格库工作流**
+- **Reusable style cards and prompt-ready references / 可复用风格卡与可直接调用的提示词参考**
+- **A Three-Body style profile plus dialogue-focused sub-profile / 《三体》总风格卡与对白专项卡**
 
 See details in / 详细说明见：
-- [`RELEASE_NOTES_v0.2.0.md`](./RELEASE_NOTES_v0.2.0.md)
+- [`RELEASE_NOTES_v0.3.0.md`](./RELEASE_NOTES_v0.3.0.md)
 
 ---
 
@@ -77,7 +83,7 @@ See details in / 详细说明见：
 - [`references/`](./references/) — references and templates / 参考文档与模板
 - [`novel-studio.skill`](./novel-studio.skill) — distributable skill package / 可分发技能包
 - [`_meta.json`](./_meta.json) — metadata / 元信息
-- [`RELEASE_NOTES_v0.2.0.md`](./RELEASE_NOTES_v0.2.0.md) — release notes / 本次更新说明
+- [`RELEASE_NOTES_v0.3.0.md`](./RELEASE_NOTES_v0.3.0.md) — release notes / 本次更新说明
 
 ---
 
@@ -116,5 +122,5 @@ This is probably overkill for:
 
 ## Current Version / 当前版本
 
-- **v0.2.0**
+- **v0.3.0**
 - Repository / 仓库：<https://github.com/oaidea/novel-studio>

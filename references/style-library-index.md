@@ -3,6 +3,7 @@
 ## 已收录风格
 
 - [三体风格参考卡（高概念科幻 / 文明尺度 / 冷峻理性）](./style-library-santi.md)
+- [三体对白风格专项卡（高信息密度 / 逻辑推进 / 冷静压迫）](./style-library-santi-dialogue.md)
 
 ## 说明
 
