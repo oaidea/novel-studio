@@ -62,7 +62,7 @@ It is not a black-box tool that “writes the whole novel for you”. It is a mo
 
 ---
 
-## v0.3.0 Highlights / v0.3.0 更新亮点
+## v0.3.1 Highlights / v0.3.1 更新亮点
 
 This release focuses on:
 
@@ -122,5 +122,5 @@ This is probably overkill for:
 
 ## Current Version / 当前版本
 
-- **v0.3.0**
+- **v0.3.1**
 - Repository / 仓库：<https://github.com/oaidea/novel-studio>
