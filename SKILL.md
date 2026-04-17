@@ -341,6 +341,8 @@ novels/<项目名>/
 - `references/active-index-templates.md`
 - `references/semi-automation-plan.md`
 - `references/automation-expansion-plan.md`
+- `references/minimal-workflow-chain.md`
+- `references/workflow-demo.md`
 - `references/scripts-index.md`
 - `references/event-card-system.md`
 - `references/templates/project-skeleton-template.md`
@@ -375,6 +377,7 @@ novels/<项目名>/
 - `scripts/writeback_sync.py`：为章节回写生成 checklist scaffold
 - `scripts/index_refresh.py`：初始化 / 刷新活动索引 scaffold
 - `scripts/style_check.py`：为单章生成风格一致性检查 scaffold
+- `scripts/workflow_runner.py`：串行触发最小 workflow chain
 
 ---
 
