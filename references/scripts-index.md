@@ -6,7 +6,7 @@
 - `scripts/extract_project_style.py`：为项目生成母风格卡 scaffold
 - `scripts/build_style_packet.py`：为单章生成风格调用说明 scaffold
 - `scripts/build_object_state_summary.py`：为单章生成对象状态摘要 scaffold
-- `scripts/build_input_pack.py`：为单章生成模型输入版 / 人工审阅版最小输入包
+- `scripts/build_input_pack.py`：为单章生成模型极简版 / 模型标准版 / 人工审阅版输入包
 - `scripts/writeback_sync.py`：为章节回写生成 checklist scaffold
 - `scripts/index_refresh.py`：初始化 / 刷新活动索引 scaffold
 - `scripts/style_check.py`：为单章生成风格一致性检查 scaffold
