@@ -3,8 +3,8 @@
 build_object_state_summary.py
 
 Create a chapter-scoped object state summary scaffold based on packet object lists.
-Current version tries to pull a first useful hint from cards and, when present,
-prefers the last bullet from matching change logs as the freshest state clue.
+Current version prefers the latest change log but keeps both recent change and
+stable state when possible, plus a chapter-specific constraint slot.
 """
 
 from pathlib import Path
@@ -89,15 +89,16 @@ def block(title: str, items: list[str], card_folder: Path, change_folder: Path):
         hint = extract_hint(card) if card else ""
         latest = extract_latest_change(change) if change else ""
 
+        lines.append(f"- {item}")
         if latest:
-            lines.append(f"- {item}：最近变化 = {latest}{f'（参考 `{change.name}`）' if change else ''}")
-        elif card and hint:
-            lines.append(f"- {item}：当前状态 = {hint}（参考 `{card.name}`）")
-        elif card:
-            lines.append(f"- {item}：当前状态待补（参考 `{card.name}`）")
+            lines.append(f"  - 最近变化：{latest}{f'（参考 `{change.name}`）' if change else ''}")
         else:
-            lines.append(f"- {item}：当前状态待补")
-        lines.append(f"  - 本章约束：")
+            lines.append("  - 最近变化：")
+        if hint:
+            lines.append(f"  - 当前稳定状态：{hint}{f'（参考 `{card.name}`）' if card else ''}")
+        else:
+            lines.append("  - 当前稳定状态：")
+        lines.append("  - 本章约束：")
     return lines
 
 
