@@ -133,6 +133,23 @@ def main() -> int:
         for idx, (_, label, cmd) in enumerate(next_actions, start=1):
             lines.append(f"{idx}. {label}")
             lines.append(f"   - 推荐命令：`{cmd}`")
+
+        risks = []
+        if summary.exists() and summary.stat().st_size < 80:
+            risks.append("summary 已存在但内容很薄，承接上下文风险偏高")
+        if packet.exists() and packet.stat().st_size < 120:
+            risks.append("chapter packet 已存在但内容很薄，结构约束风险偏高")
+        if style_card.exists() and not style_overlay.exists():
+            risks.append("项目母风格已存在但本章 style overlay 缺失，章节风格跑偏风险偏高")
+        if indexes.exists():
+            md_files = list(indexes.glob("*.md"))
+            if not md_files:
+                risks.append("indexes 目录已存在但尚未形成活动索引，低 token 上下文仍偏弱")
+        if not risks and can_write:
+            risks.append("当前未见明显结构性风险，可进入正文写作")
+
+        lines += ["", "## 风险提示", ""]
+        lines.extend([f"- {item}" for item in risks])
         lines += ["", "## 结论", f"- 当前是否适合正式写正文：{'是' if can_write else '否'}", ""]
         startup_report.parent.mkdir(parents=True, exist_ok=True)
         startup_report.write_text("\n".join(lines))
