@@ -17,7 +17,7 @@
 
 ### 1. 章节启动
 使用：
-- `scripts/chapter_startup.py`
+- `scripts/workflow_runner.py <project-dir> <chapter-id> startup`
 
 结果：
 - 生成 chapter packet scaffold
@@ -42,28 +42,38 @@
 
 ### 4. 章节回写
 使用：
-- `scripts/writeback_sync.py`
+- `scripts/workflow_runner.py <project-dir> <chapter-id> writeback`
 
 结果：
-- 生成回写 checklist scaffold
+- 生成回写检查结果
 
 ### 5. 索引刷新
 使用：
-- `scripts/index_refresh.py`
+- `scripts/workflow_runner.py <project-dir> <chapter-id> refresh`
 
 结果：
 - 刷新 / 准备下一章启动所需的 active indexes
 
 ### 6. 风格检查
 使用：
-- `scripts/style_check.py`
+- `scripts/workflow_runner.py <project-dir> <chapter-id> style`
 
 结果：
 - 生成风格一致性检查 scaffold
 
 ---
 
-## 二、最小闭环
+## 二、可用模式
+
+- `startup`
+- `style`
+- `writeback`
+- `refresh`
+- `full`
+
+---
+
+## 三、最小闭环
 
 一章的最小闭环应是：
 
@@ -71,28 +81,11 @@
 2. packet
 3. style overlay
 4. draft chapter
-5. writeback checklist
-6. index refresh
+5. writeback
+6. refresh
 7. style check
 8. next chapter startup
 
 一句话：
 
 > **新章不是从正文开始，而是从 startup 开始；一章也不是写完正文就结束，而是要走完 writeback + refresh + style check。**
-
----
-
-## 三、推荐未来整合方向
-
-后续可以补一个统一入口脚本，例如：
-- `workflow_runner.py`
-
-负责串行触发：
-- init
-- startup
-- style packet
-- writeback
-- refresh
-- style check
-
-当前阶段先不全自动，只先把串联顺序钉死。

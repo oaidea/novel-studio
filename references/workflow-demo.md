@@ -9,7 +9,7 @@ scripts/init_novel_project.py <project-dir>
 
 ## Step 2：启动某章
 ```bash
-scripts/chapter_startup.py <project-dir> ch_0007
+scripts/workflow_runner.py <project-dir> ch_0007 startup
 ```
 
 ## Step 3：生成项目风格卡 scaffold
@@ -32,12 +32,12 @@ scripts/build_style_packet.py <project-dir> ch_0007 settings/subsettings/project
 
 ## Step 6：回写与检查
 ```bash
-scripts/writeback_sync.py <project-dir> ch_0007
-scripts/index_refresh.py <project-dir>
-scripts/style_check.py <project-dir> ch_0007
+scripts/workflow_runner.py <project-dir> ch_0007 writeback
+scripts/workflow_runner.py <project-dir> ch_0007 refresh
+scripts/workflow_runner.py <project-dir> ch_0007 style
 ```
 
 ## Step 7：一键跑最小链（当前版）
 ```bash
-scripts/workflow_runner.py <project-dir> ch_0007
+scripts/workflow_runner.py <project-dir> ch_0007 full
 ```
