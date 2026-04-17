@@ -2,24 +2,35 @@
 """
 index_refresh.py
 
-Planned purpose:
-- refresh active indexes under .novel-studio/indexes/
-- provide stable low-token entrypoints for next-chapter planning
-
-Current state:
-- scaffold placeholder only
+Refresh active indexes under .novel-studio/indexes/ from current project files.
+Current behavior is intentionally conservative and file-system based.
 """
 
 from pathlib import Path
+import re
 import sys
 
-INDEX_FILES = [
-    "active-characters.md",
-    "active-events.md",
-    "active-spaces.md",
-    "active-scenes.md",
-    "pending-foreshadowing.md",
-]
+
+def list_markdown_names(folder: Path, suffix_to_strip: str = ".md") -> list[str]:
+    if not folder.exists():
+        return []
+    items = []
+    for path in sorted(folder.glob("*.md")):
+        name = path.name
+        if suffix_to_strip and name.endswith(suffix_to_strip):
+            name = name[: -len(suffix_to_strip)]
+        items.append(name)
+    return items
+
+
+def write_index(path: Path, title: str, items: list[str], fallback: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    lines = [f"# {title}", ""]
+    if items:
+        lines.extend([f"- {item}" for item in items])
+    else:
+        lines.append(f"- {fallback}")
+    path.write_text("\n".join(lines) + "\n")
 
 
 def main() -> int:
@@ -31,13 +42,34 @@ def main() -> int:
     idx_dir = root / ".novel-studio" / "indexes"
     idx_dir.mkdir(parents=True, exist_ok=True)
 
-    for name in INDEX_FILES:
-        target = idx_dir / name
-        if not target.exists():
-            heading = name.replace('.md', '').replace('-', ' ')
-            target.write_text(f"# {heading}\n\n- 待刷新\n")
+    char_dir = root / "settings" / "subsettings" / "characters"
+    event_dir = root / "settings" / "subsettings" / "events"
+    space_dir = root / "settings" / "subsettings" / "spaces" / "cards"
+    scene_dir = root / "settings" / "subsettings" / "scenes" / "cards"
 
-    print(f"prepared index scaffolds under: {idx_dir}")
+    characters = [n for n in list_markdown_names(char_dir) if n not in {"README"}]
+    events = [n for n in list_markdown_names(event_dir) if n not in {"README"}]
+    spaces = [n for n in list_markdown_names(space_dir) if n not in {"README"}]
+    scenes = [n for n in list_markdown_names(scene_dir) if n not in {"README", "scene-index"}]
+
+    pending = []
+    foreshadow_file = root / "settings" / "subsettings" / "foreshadowing" / "foreshadowing-management.md"
+    if foreshadow_file.exists():
+        text = foreshadow_file.read_text()
+        for line in text.splitlines():
+            line = line.strip()
+            if line.startswith("- "):
+                pending.append(line)
+                if len(pending) >= 20:
+                    break
+
+    write_index(idx_dir / "active-characters.md", "active characters", characters, "待刷新")
+    write_index(idx_dir / "active-events.md", "active events", events, "待刷新")
+    write_index(idx_dir / "active-spaces.md", "active spaces", spaces, "待刷新")
+    write_index(idx_dir / "active-scenes.md", "active scenes", scenes, "待刷新")
+    write_index(idx_dir / "pending-foreshadowing.md", "pending foreshadowing", pending, "待刷新")
+
+    print(f"refreshed indexes under: {idx_dir}")
     return 0
 
 
