@@ -71,6 +71,12 @@
 - `refresh`
 - `full`
 
+### `full` 当前具备的最小判断逻辑
+- 如果没有项目风格卡，会提示先生成母风格
+- 如果没有 chapter packet，会自动先跑 startup
+- 如果没有 indexes，会提示并在 refresh 时准备
+- 如果没有 summaries，会提示 packet-first 连续性仍偏弱
+
 ---
 
 ## 三、最小闭环
