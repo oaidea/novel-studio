@@ -2,9 +2,8 @@
 """
 build_input_pack.py
 
-Build chapter-scoped input pack files in two forms:
-- model input pack: low-token oriented (with minimal vs standard levels)
-- review input pack: fuller, human-auditable
+Build chapter-scoped input pack files in multiple forms and publish one default
+input-pack.md based on a simple tier recommendation.
 """
 
 from pathlib import Path
@@ -27,6 +26,7 @@ def main() -> int:
 
     model_min = root / ".novel-studio" / "logs" / f"{chapter_id}-input-pack-model-min.md"
     model_std = root / ".novel-studio" / "logs" / f"{chapter_id}-input-pack-model-std.md"
+    model_default = root / ".novel-studio" / "logs" / f"{chapter_id}-input-pack.md"
     review_out = root / ".novel-studio" / "logs" / f"{chapter_id}-input-pack-review.md"
     model_min.parent.mkdir(parents=True, exist_ok=True)
 
@@ -37,13 +37,20 @@ def main() -> int:
 
     min_lines = [f"# {chapter_id} 模型输入包（极简）", "", "## 核心输入", ""]
     min_lines.extend([f"- `{p.relative_to(root)}`" for p in core_min])
-    min_lines += ["", "## 说明", "- 目标：极致节省 token。", "- 适用于本章承接简单、对象变化不多的情况。", ""]
+    min_lines += ["", "## 说明", "- 目标：极致节省 token。", "- 适用于本章承接简单、对象变化少的情况。", ""]
     model_min.write_text("\n".join(min_lines))
 
     std_lines = [f"# {chapter_id} 模型输入包（标准）", "", "## 核心输入", ""]
     std_lines.extend([f"- `{p.relative_to(root)}`" for p in core_std])
     std_lines += ["", "## 说明", "- 目标：在低 token 前提下，保留对象状态层。", "- 适用于本章对象变化较多或承接要求更高的情况。", ""]
     model_std.write_text("\n".join(std_lines))
+
+    use_min = packet.exists() and packet.stat().st_size < 140 and object_summary.exists() and object_summary.stat().st_size < 120
+    chosen = model_min if use_min else model_std
+    tier = "极简" if use_min else "标准"
+    default_lines = [f"# {chapter_id} 模型输入包（默认）", "", f"- 当前推荐档位：{tier}", f"- 默认映射文件：`{chosen.relative_to(root)}`", "", "## 核心输入", ""]
+    default_lines.extend([f"- `{p.relative_to(root)}`" for p in (core_min if use_min else core_std)])
+    model_default.write_text("\n".join(default_lines) + "\n")
 
     review_lines = [f"# {chapter_id} 人工审阅输入包", "", "## 核心输入", ""]
     review_lines.extend([f"- `{p.relative_to(root)}`" for p in core_std])
@@ -55,7 +62,7 @@ def main() -> int:
     review_lines += ["", "## 说明", "- 目标：给人快速核对本章准备状态。", "- 比模型输入版更完整，适合检查承接、对象和风格。", ""]
     review_out.write_text("\n".join(review_lines))
 
-    print(f"prepared input pack files: {model_min} , {model_std} , {review_out}")
+    print(f"prepared input pack files: {model_min} , {model_std} , {model_default} , {review_out}")
     return 0
 
 
