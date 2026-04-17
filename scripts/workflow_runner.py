@@ -120,10 +120,10 @@ def main() -> int:
             run([str(SCRIPT_DIR / "build_style_packet.py"), str(root), chapter_id, str(style_card.relative_to(root))])
         if not object_summary.exists() and packet.exists():
             run([str(SCRIPT_DIR / "build_object_state_summary.py"), str(root), chapter_id])
-        run([str(SCRIPT_DIR / "build_input_pack.py"), str(root), chapter_id])
         if not indexes.exists():
             note("indexes directory not found; refresh will prepare it")
             run([str(SCRIPT_DIR / "index_refresh.py"), str(root)])
+        run([str(SCRIPT_DIR / "build_input_pack.py"), str(root), chapter_id])
 
         ready_items = [
             ("summary", summary.exists(), summary),
@@ -141,7 +141,7 @@ def main() -> int:
             lines.append(f"- [{mark}] {label}：`{rel}`")
             if not ok:
                 missing.append(label)
-        can_write = all(ok for _, ok, _ in ready_items if _ != indexes)
+        can_write = all(ok for label, ok, _ in ready_items if label != "indexes")
         lines += ["", "## 缺失项", ""]
         if missing:
             lines.extend([f"- {item}" for item in missing])
@@ -188,6 +188,19 @@ def main() -> int:
 
         lines += ["", "## 风险提示", ""]
         lines.extend([f"- {item}" for item in risks])
+
+        recommendation = "模型输入包（标准）"
+        recommendation_reason = "当前默认建议带对象状态层，平衡 token 与承接稳定性。"
+        if packet.exists() and packet.stat().st_size < 140 and object_summary.exists() and object_summary.stat().st_size < 120:
+            recommendation = "模型输入包（极简）"
+            recommendation_reason = "本章结构较轻，对象状态也较短，适合走更轻的输入包。"
+        if object_summary.exists() and object_summary.stat().st_size >= 120:
+            recommendation = "模型输入包（标准）"
+            recommendation_reason = "对象状态层信息较多，建议保留标准输入包以稳住承接。"
+
+        lines += ["", "## 输入包档位建议", ""]
+        lines.append(f"- 当前推荐：{recommendation}")
+        lines.append(f"- 原因：{recommendation_reason}")
 
         lines += ["", "## 建议输入包", "", "### 必带（核心输入层）", ""]
         lines += [f"- `{summary.relative_to(root)}`", f"- `{packet.relative_to(root)}`", f"- `{style_overlay.relative_to(root)}`", f"- `{object_summary.relative_to(root)}`"]
@@ -268,8 +281,8 @@ def main() -> int:
             run([str(SCRIPT_DIR / "build_style_packet.py"), str(root), chapter_id, str(style_card.relative_to(root))])
         if not object_summary.exists() and packet.exists():
             run([str(SCRIPT_DIR / "build_object_state_summary.py"), str(root), chapter_id])
-
         run([str(SCRIPT_DIR / "build_input_pack.py"), str(root), chapter_id])
+
         run([str(SCRIPT_DIR / "writeback_sync.py"), str(root), chapter_id])
         run([str(SCRIPT_DIR / "style_check.py"), str(root), chapter_id])
         run([str(SCRIPT_DIR / "index_refresh.py"), str(root)])
