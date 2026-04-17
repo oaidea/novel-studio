@@ -1,41 +1,46 @@
 # Novel Studio / 小说创作工作台
 
-A unified fiction-writing skill for **project setup, worldbuilding, outlining, chapter writing, serialization management, review, style polishing, writing training, and reusable style-library workflows**.
+A unified long-form fiction studio for **project governance, packet-first chapter writing, project-level style modeling, chapter startup workflows, serialization management, review, and low-token context orchestration**.
 
-一个统一的小说创作技能，覆盖：**立项、设定、大纲、章节写作、连载管理、审校、润色、写作学习训练，以及可复用的风格库工作流**。
+一个统一的长篇小说创作工作台，覆盖：**项目治理、packet-first 单章写作、项目级母风格建模、章节启动工作流、连载管理、审校，以及低 token 上下文装载编排**。
 
-It is not a black-box tool that “writes the whole novel for you”. It is a more stable workspace for long-form fiction projects:
+It is not a black-box tool that “writes the whole novel for you”. It is a structured fiction operating system for long-running projects:
 
-它不是“自动替你写完整本小说”的黑箱工具，而是一个更适合长期项目的创作工作台：
+它不是“自动替你写完整本小说”的黑箱工具，而是一个更像操作系统的长期创作工作台：
 
-- clarify constraints before writing / 写之前帮助收束约束与方向
-- stabilize structure, character, pacing, and hooks during drafting / 写的时候稳住结构、人物、节奏和钩子
-- support review, summaries, tracking, and style cleanup after drafting / 写完后支持审校、摘要、状态追踪与文风整理
-- reduce setting drift, forgotten foreshadowing, and pacing collapse in long serial projects / 在长篇推进中降低设定漂移、伏笔遗失和节奏散掉的风险
+- structure the project before writing / 写之前先把项目结构搭稳
+- stabilize chapter inputs with packet, summary, style overlay, and object state summary / 写的时候用 packet、summary、style overlay、对象状态摘要稳住输入
+- reduce reliance on full chapter rereads / 降低对前文章节全文反复回读的依赖
+- keep project style, object state, and workflow emergence aligned / 让项目母风格、对象状态和章节工作流始终对齐
 
 ---
 
 ## Core Capabilities / 核心能力
 
-### 1. Project Setup / 项目初始化
-- new project setup / 新书立项
+### 1. Project Governance / 项目治理
 - project skeleton creation / 项目骨架创建
-- foundational file structure / 基础文件结构搭建
+- core/world/subsettings layering / 总设定、规则层、子设定分层
+- chapter flow vs brainstorm flow separation / 正文流与发散流分离
+- entrypoint layering: README / project-notes / nav / 入口层级分工
+- naming conventions and card systems / 命名规范与卡片系统
 
-### 2. Worldbuilding & Planning / 设定与规划
-- world, character, faction, and power-system design / 世界观、角色、势力与力量体系
-- volume outline, chapter outline, timeline, and foreshadowing / 分卷大纲、章节大纲、时间线与伏笔表
-- long-form structure constraints / 长篇结构约束与状态管理
+### 2. Packet-First Chapter Writing / Packet-First 单章写作
+- chapter startup packet workflow / 章节启动 packet 工作流
+- summary-first continuation / 先摘要、后续写
+- object state summaries / 对象状态摘要
+- lower-token chapter input packs / 低 token 单章输入包
+- fulltext escalation only when necessary / 仅在必要时升级回读全文
 
-### 3. Chapter Writing / 章节写作
-- write, continue, or rewrite chapters / 单章写作、续写、重写
-- pre-write analysis → task sheet → draft → self-check → polish → metadata update / 预写分析 → 写作任务书 → 初稿 → 自检 → 润色 → 元数据更新
-- a more stable chapter-level workflow / 更稳定的章节级创作流程
+### 3. Project Style Model / 项目级风格模型
+- mother-style card generation / 项目母风格卡生成
+- style extraction from published chapters first / 已发布章节优先的风格提取
+- chapter style overlay / 单章风格调用说明
+- style consistency checking / 风格一致性检查
 
 ### 4. Serialization Management / 连载管理
-- main plot / relationship / worldbuilding rhythm checks / 主线、感情线、世界观线的节奏约束
-- pacing debt detection / 节奏债务检查
-- chapter summaries and project tracking / 连载状态跟踪与章节摘要
+- chapter summaries and project state / 连载状态跟踪与章节摘要
+- pacing, hook, and continuity checks / 节奏、钩子、承接检查
+- active indexes for low-token retrieval / 面向低 token 的活动索引
 
 ### 5. Review & Polishing / 审校与润色
 - logic review / 逻辑检查
@@ -43,47 +48,38 @@ It is not a black-box tool that “writes the whole novel for you”. It is a mo
 - timeline review / 时间线检查
 - style polish and de-AI editing / 文风优化与去 AI 味
 
-### 6. Learning Mode (v0.2.0) / 学习模式（v0.2.0）
-- diagnose writing weaknesses / 诊断当前写作短板
-- create staged training plans / 制定分阶段训练计划
-- turn advice into project tasks / 把建议反打到项目里
-- close the loop: learn → apply → review / 建立“学习 → 应用 → 复盘”闭环
-
-### 7. Structured Templates (v0.2.0) / 结构化模板（v0.2.0）
-- character three-table template / 角色三表模板
-- chapter progression checklist / 章节推进检查表
-- motivation change tracking / 角色动机变化表
-
-### 8. Style Library Workflow (v0.3.0) / 风格库工作流（v0.3.0）
-- extract reusable style cards / 提炼可复用风格卡
-- convert style studies into prompts / 将风格研究转成可执行提示词
-- store style assets under references / 把风格资产沉淀到 references 中
-- support sub-cards such as dialogue-only profiles / 支持对白专项等子风格卡
+### 6. Semi-Automation / 半自动工作流
+- init workflow / 初始化工作流
+- chapter startup / 章节启动
+- style-full / 风格链接入
+- chapter-full / 章节可写状态报告
+- writeback / refresh / style check / 回写、刷新与风格检查
+- workflow runner / 统一 workflow 入口
 
 ---
 
-## v0.3.1 Highlights / v0.3.1 更新亮点
+## v0.6.8 Highlights / v0.6.8 更新亮点
 
-This release focuses on:
+This release focuses on turning Novel Studio from a writing skill into a chapter-oriented low-token fiction workflow system.
 
-本次版本重点升级：
+本次版本重点是把 Novel Studio 从“写作 skill”推进成“面向单章、低 token、可治理的创作工作流系统”。
 
-- **Style Library Workflow / 风格库工作流**
-- **Reusable style cards and prompt-ready references / 可复用风格卡与可直接调用的提示词参考**
-- **A Three-Body style profile plus dialogue-focused sub-profile / 《三体》总风格卡与对白专项卡**
-
-See details in / 详细说明见：
-- [`RELEASE_NOTES_v0.3.0.md`](./RELEASE_NOTES_v0.3.0.md)
+Highlights / 亮点：
+- **Project Governance**：项目治理模式、目录分层、卡片系统、命名规范
+- **Packet-First Writing**：chapter packet、summary-first、对象状态摘要、最小输入包
+- **Project Style Model**：项目母风格卡、单章风格调用、风格一致性检查
+- **Workflow Orchestration**：startup / style-full / chapter-full / full 模式
+- **Input Pack Tiers**：模型极简版 / 模型标准版 / 人工审阅版输入包
 
 ---
 
 ## Repository Structure / 仓库结构
 
 - [`SKILL.md`](./SKILL.md) — main skill specification / 技能主说明与工作模式
-- [`references/`](./references/) — references and templates / 参考文档与模板
+- [`references/`](./references/) — references, strategies, templates / 参考文档、策略与模板
+- [`scripts/`](./scripts/) — workflow scaffolds and utilities / 工作流脚手架与工具脚本
 - [`novel-studio.skill`](./novel-studio.skill) — distributable skill package / 可分发技能包
 - [`_meta.json`](./_meta.json) — metadata / 元信息
-- [`RELEASE_NOTES_v0.3.0.md`](./RELEASE_NOTES_v0.3.0.md) — release notes / 本次更新说明
 
 ---
 
@@ -94,9 +90,9 @@ Best for:
 更适合：
 
 - long-form novels and webnovels / 长篇小说与网文连载
-- projects that need stable settings, timelines, and character tracking / 需要长期维护设定、时间线与角色状态的项目
-- writers who want a more stable workflow / 想把写作流程做得更稳的人
-- writers who want to train while writing / 想把“学习写作”直接落回作品的人
+- projects that need stable settings, style, and object tracking / 需要长期维护设定、风格与对象状态的项目
+- writers who want low-token chapter workflows / 想建立低 token 单章创作流程的人
+- writers who want project-level style consistency / 想稳住整部作品母风格的人
 
 ---
 
@@ -115,12 +111,13 @@ This is probably overkill for:
 ## Quick Start / 快速开始
 
 1. Read [`SKILL.md`](./SKILL.md) first / 先读 `SKILL.md`
-2. Check the relevant docs in [`references/`](./references/) / 按任务类型查看 `references/`
-3. Use [`novel-studio.skill`](./novel-studio.skill) for installation or distribution / 需要安装或分发时使用 `novel-studio.skill`
+2. Use [`references/`](./references/) to find governance, packet-first, style, and workflow docs / 从 `references/` 里查治理、packet-first、风格与工作流文档
+3. Use [`scripts/`](./scripts/) to initialize or run workflows / 用 `scripts/` 初始化项目或运行工作流
+4. Use [`novel-studio.skill`](./novel-studio.skill) for installation or distribution / 需要安装或分发时使用 `novel-studio.skill`
 
 ---
 
 ## Current Version / 当前版本
 
-- **v0.3.1**
+- **v0.6.8**
 - Repository / 仓库：<https://github.com/oaidea/novel-studio>
