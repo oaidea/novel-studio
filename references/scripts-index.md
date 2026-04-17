@@ -5,11 +5,12 @@
 - `scripts/chapter_startup.py`：为新章节生成 packet 与启动清单骨架
 - `scripts/extract_project_style.py`：为项目生成母风格卡 scaffold
 - `scripts/build_style_packet.py`：为单章生成风格调用说明 scaffold
+- `scripts/build_object_state_summary.py`：为单章生成对象状态摘要 scaffold
 - `scripts/writeback_sync.py`：为章节回写生成 checklist scaffold
 - `scripts/index_refresh.py`：初始化 / 刷新活动索引 scaffold
 - `scripts/style_check.py`：为单章生成风格一致性检查 scaffold
 - `scripts/workflow_runner.py`：串行触发最小 workflow chain
 
 当前状态：
-- 已提供第一版 scaffold
+- 已提供第一版 scaffold / 轻量实用工具混合层
 - 后续可继续扩展 naming lint / link check / true style extraction / true index refresh / full workflow runner

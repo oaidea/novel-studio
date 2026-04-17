@@ -81,6 +81,7 @@ def main() -> int:
     style_card = root / "settings" / "subsettings" / "project-style-card.md"
     packet = root / ".novel-studio" / "packets" / f"{chapter_id}-packet.md"
     style_overlay = root / ".novel-studio" / "packets" / f"{chapter_id}-style-overlay.md"
+    object_summary = root / ".novel-studio" / "summaries" / f"{chapter_id}-objects.md"
     indexes = root / ".novel-studio" / "indexes"
     summaries = root / ".novel-studio" / "summaries"
     summary = summaries / f"{chapter_id}-summary.md"
@@ -117,6 +118,8 @@ def main() -> int:
             run([str(SCRIPT_DIR / "extract_project_style.py"), str(root), project_name])
         if style_card.exists() and not style_overlay.exists():
             run([str(SCRIPT_DIR / "build_style_packet.py"), str(root), chapter_id, str(style_card.relative_to(root))])
+        if not object_summary.exists() and packet.exists():
+            run([str(SCRIPT_DIR / "build_object_state_summary.py"), str(root), chapter_id])
         if not indexes.exists():
             note("indexes directory not found; refresh will prepare it")
             run([str(SCRIPT_DIR / "index_refresh.py"), str(root)])
@@ -126,6 +129,7 @@ def main() -> int:
             ("chapter packet", packet.exists(), packet),
             ("project style card", style_card.exists(), style_card),
             ("style overlay", style_overlay.exists(), style_overlay),
+            ("object state summary", object_summary.exists(), object_summary),
             ("indexes", indexes.exists(), indexes),
         ]
         lines = [f"# {chapter_id} 可写状态报告", ""]
@@ -136,7 +140,7 @@ def main() -> int:
             lines.append(f"- [{mark}] {label}：`{rel}`")
             if not ok:
                 missing.append(label)
-        can_write = all(ok for _, ok, _ in ready_items)
+        can_write = all(ok for _, ok, _ in ready_items if _ != indexes)
         lines += ["", "## 缺失项", ""]
         if missing:
             lines.extend([f"- {item}" for item in missing])
@@ -152,6 +156,8 @@ def main() -> int:
             next_actions.append((2, "先跑 style-full 或抽取项目母风格", f"scripts/workflow_runner.py {root} {chapter_id} style-full {project_name}"))
         if style_card.exists() and not style_overlay.exists():
             next_actions.append((2, "先生成章节 style overlay", f"scripts/workflow_runner.py {root} {chapter_id} style-full {project_name}"))
+        if not object_summary.exists():
+            next_actions.append((2, "先生成对象状态摘要", f"scripts/build_object_state_summary.py {root} {chapter_id}"))
         if not indexes.exists():
             next_actions.append((3, "先跑 refresh 准备 active indexes", f"scripts/workflow_runner.py {root} {chapter_id} refresh"))
         if not next_actions:
@@ -168,6 +174,8 @@ def main() -> int:
             risks.append("summary 已存在但内容很薄，承接上下文风险偏高")
         if packet.exists() and packet.stat().st_size < 120:
             risks.append("chapter packet 已存在但内容很薄，结构约束风险偏高")
+        if object_summary.exists() and object_summary.stat().st_size < 80:
+            risks.append("对象状态摘要已存在但内容很薄，压缩后的对象上下文仍偏弱")
         if style_card.exists() and not style_overlay.exists():
             risks.append("项目母风格已存在但本章 style overlay 缺失，章节风格跑偏风险偏高")
         if indexes.exists():
@@ -181,7 +189,7 @@ def main() -> int:
         lines.extend([f"- {item}" for item in risks])
 
         lines += ["", "## 建议输入包", "", "### 必带", ""]
-        lines += [f"- `{summary.relative_to(root)}`", f"- `{packet.relative_to(root)}`", f"- `{style_overlay.relative_to(root)}`"]
+        lines += [f"- `{summary.relative_to(root)}`", f"- `{packet.relative_to(root)}`", f"- `{style_overlay.relative_to(root)}`", f"- `{object_summary.relative_to(root)}`"]
         lines += ["", "### 推荐带", ""]
         if indexes.exists():
             added = False
@@ -257,6 +265,8 @@ def main() -> int:
 
         if style_card.exists() and not style_overlay.exists():
             run([str(SCRIPT_DIR / "build_style_packet.py"), str(root), chapter_id, str(style_card.relative_to(root))])
+        if not object_summary.exists() and packet.exists():
+            run([str(SCRIPT_DIR / "build_object_state_summary.py"), str(root), chapter_id])
 
         run([str(SCRIPT_DIR / "writeback_sync.py"), str(root), chapter_id])
         run([str(SCRIPT_DIR / "style_check.py"), str(root), chapter_id])
