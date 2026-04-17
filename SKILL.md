@@ -338,6 +338,8 @@ novels/<项目名>/
 - `references/state-json-schema.md`
 - `references/chapter-meta-schema.md`
 - `references/active-index-templates.md`
+- `references/semi-automation-plan.md`
+- `references/scripts-index.md`
 - `references/event-card-system.md`
 - `references/templates/project-skeleton-template.md`
 - `references/templates/chapter-packet-template.md`
@@ -364,6 +366,10 @@ novels/<项目名>/
 6. 如项目已进入长期维护，再明确 `.novel-studio/packets/`、`summaries/`、`indexes/` 将如何更新
 7. 必要时附上 `chapter startup checklist` 与 `chapter writeback checklist`
 8. 若用户允许，再进入正文生成
+
+### 可选脚本入口
+- `scripts/init_novel_project.py`：初始化 packet-first 项目骨架
+- `scripts/chapter_startup.py`：为新章节生成 packet 与启动清单骨架
 
 ---
 

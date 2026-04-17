@@ -1,7 +1,7 @@
 {
   "name": "novel-studio",
-  "version": "0.5.3",
-  "description": "统一小说创作总技能，整合立项、设定、大纲、章节写作、审校、润色、连载管理、风格库调用、项目治理、低 token 的 packet-first 写作、写作学习训练与模板化输出。",
+  "version": "0.6.0",
+  "description": "统一小说创作总技能，整合立项、设定、大纲、章节写作、审校、润色、连载管理、风格库调用、项目治理、低 token 的 packet-first 写作、半自动工作流、写作学习训练与模板化输出。",
   "author": "Xiao Penzi",
   "source": "local-workspace",
   "type": "skill"
