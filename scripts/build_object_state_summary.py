@@ -3,14 +3,12 @@
 build_object_state_summary.py
 
 Create a chapter-scoped object state summary scaffold based on packet object lists.
-Current version also tries to pull a first line / first useful bullet from matched cards.
+Current version tries to pull a first useful hint and adds a second line reserved
+for chapter-specific constraints.
 """
 
 from pathlib import Path
 import sys
-
-
-SECTIONS = ["人物", "事件", "空间", "场景"]
 
 
 def extract_items(packet: Path, section_name: str):
@@ -67,11 +65,12 @@ def block(title: str, items: list[str], folder: Path):
         card = match_card(folder, item)
         hint = extract_hint(card) if card else ""
         if card and hint:
-            lines.append(f"- {item}：{hint}（参考 `{card.name}`）")
+            lines.append(f"- {item}：当前状态 = {hint}（参考 `{card.name}`）")
         elif card:
-            lines.append(f"- {item}（参考 `{card.name}`）")
+            lines.append(f"- {item}：当前状态待补（参考 `{card.name}`）")
         else:
-            lines.append(f"- {item}：")
+            lines.append(f"- {item}：当前状态待补")
+        lines.append(f"  - 本章约束：")
     return lines
 
 
