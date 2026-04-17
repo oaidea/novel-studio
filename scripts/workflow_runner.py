@@ -120,6 +120,7 @@ def main() -> int:
             run([str(SCRIPT_DIR / "build_style_packet.py"), str(root), chapter_id, str(style_card.relative_to(root))])
         if not object_summary.exists() and packet.exists():
             run([str(SCRIPT_DIR / "build_object_state_summary.py"), str(root), chapter_id])
+        run([str(SCRIPT_DIR / "build_input_pack.py"), str(root), chapter_id])
         if not indexes.exists():
             note("indexes directory not found; refresh will prepare it")
             run([str(SCRIPT_DIR / "index_refresh.py"), str(root)])
@@ -268,6 +269,7 @@ def main() -> int:
         if not object_summary.exists() and packet.exists():
             run([str(SCRIPT_DIR / "build_object_state_summary.py"), str(root), chapter_id])
 
+        run([str(SCRIPT_DIR / "build_input_pack.py"), str(root), chapter_id])
         run([str(SCRIPT_DIR / "writeback_sync.py"), str(root), chapter_id])
         run([str(SCRIPT_DIR / "style_check.py"), str(root), chapter_id])
         run([str(SCRIPT_DIR / "index_refresh.py"), str(root)])
