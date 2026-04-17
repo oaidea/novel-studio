@@ -41,7 +41,7 @@ def ensure_json(path: Path, data: dict) -> None:
 def main() -> int:
     if len(sys.argv) < 4:
         print("usage: workflow_runner.py <project-dir> <chapter-id> <mode> [project-name]")
-        print("modes: startup | style | style-full | writeback | refresh | full")
+        print("modes: startup | style | style-full | chapter-full | writeback | refresh | full")
         return 1
 
     root = Path(sys.argv[1]).expanduser().resolve()
@@ -74,6 +74,23 @@ def main() -> int:
         if style_card.exists() and not style_overlay.exists():
             run([str(SCRIPT_DIR / "build_style_packet.py"), str(root), chapter_id, str(style_card.relative_to(root))])
         run([str(SCRIPT_DIR / "style_check.py"), str(root), chapter_id])
+    elif mode == "chapter-full":
+        if not summary.exists():
+            ensure_file(
+                summary,
+                f"# {chapter_id} 摘要\n\n## 一、本章发生了什么\n- \n\n## 二、人物停在哪\n- \n\n## 三、事件推进到哪\n- \n\n## 四、空间 / 场景状态变化\n- \n\n## 五、时间锚点\n- \n\n## 六、下一章承接点\n- \n",
+            )
+        if not packet.exists():
+            run([str(SCRIPT_DIR / "chapter_startup.py"), str(root), chapter_id])
+        if not style_card.exists():
+            note("project style card not found; extracting project style scaffold now")
+            run([str(SCRIPT_DIR / "extract_project_style.py"), str(root), project_name])
+        if style_card.exists() and not style_overlay.exists():
+            run([str(SCRIPT_DIR / "build_style_packet.py"), str(root), chapter_id, str(style_card.relative_to(root))])
+        if not indexes.exists():
+            note("indexes directory not found; refresh will prepare it")
+            run([str(SCRIPT_DIR / "index_refresh.py"), str(root)])
+        note("chapter-full ready: packet / summary / style overlay / indexes are prepared for writing")
     elif mode == "writeback":
         run([str(SCRIPT_DIR / "writeback_sync.py"), str(root), chapter_id])
     elif mode == "refresh":
@@ -117,7 +134,7 @@ def main() -> int:
         run([str(SCRIPT_DIR / "index_refresh.py"), str(root)])
     else:
         print(f"unknown mode: {mode}")
-        print("modes: startup | style | style-full | writeback | refresh | full")
+        print("modes: startup | style | style-full | chapter-full | writeback | refresh | full")
         return 1
 
     print(f"workflow mode '{mode}' completed for {chapter_id}")

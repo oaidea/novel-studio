@@ -23,7 +23,18 @@
 - 生成 chapter packet scaffold
 - 生成 chapter startup checklist scaffold
 
-### 2. 风格接入
+### 2. 章节创作准备（推荐）
+使用：
+- `scripts/workflow_runner.py <project-dir> <chapter-id> chapter-full <project-name>`
+
+结果：
+- 确保 summary 已存在
+- 确保 chapter packet 已存在
+- 确保项目母风格卡已存在
+- 确保 style overlay 已存在
+- 确保 indexes 已存在
+
+### 3. 风格接入（独立使用时）
 使用：
 - `scripts/workflow_runner.py <project-dir> <chapter-id> style-full <project-name>`
 
@@ -32,7 +43,7 @@
 - 若无 style overlay，则自动生成
 - 生成 style check
 
-### 3. 正文创作
+### 4. 正文创作
 依据：
 - chapter packet
 - 上一章 summary
@@ -40,14 +51,14 @@
 - 相关对象卡
 - 项目母风格 + 单章风格偏移
 
-### 4. 章节回写
+### 5. 章节回写
 使用：
 - `scripts/workflow_runner.py <project-dir> <chapter-id> writeback`
 
 结果：
 - 生成回写检查结果
 
-### 5. 索引刷新
+### 6. 索引刷新
 使用：
 - `scripts/workflow_runner.py <project-dir> <chapter-id> refresh`
 
@@ -61,14 +72,14 @@
 - `startup`
 - `style`
 - `style-full`
+- `chapter-full`
 - `writeback`
 - `refresh`
 - `full`
 
-### `style-full` 当前作用
-- 自动接入项目母风格卡
-- 自动准备章节 style overlay
-- 自动生成 style check
+### `chapter-full` 当前作用
+- 作为章节级创作启动入口
+- 在真正写正文前，把 packet / summary / style overlay / indexes 补齐到最低可运行状态
 
 ### `full` 当前具备的最小自愈逻辑
 - 如果没有项目风格卡，会自动调用 `extract_project_style.py`
@@ -85,7 +96,7 @@
 一章的最小闭环应是：
 
 1. startup
-2. style-full
+2. chapter-full
 3. draft chapter
 4. writeback
 5. refresh
@@ -93,4 +104,4 @@
 
 一句话：
 
-> **新章不是从正文开始，而是从 startup + style-full 开始；一章也不是写完正文就结束，而是要走完 writeback + refresh。**
+> **新章不是从正文开始，而是从 startup + chapter-full 开始；一章也不是写完正文就结束，而是要走完 writeback + refresh。**

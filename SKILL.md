@@ -377,7 +377,7 @@ novels/<项目名>/
 - `scripts/writeback_sync.py`：为章节回写生成 checklist scaffold
 - `scripts/index_refresh.py`：初始化 / 刷新活动索引 scaffold
 - `scripts/style_check.py`：为单章生成风格一致性检查 scaffold
-- `scripts/workflow_runner.py`：串行触发最小 workflow chain（支持 startup / style / style-full / writeback / refresh / full 模式）
+- `scripts/workflow_runner.py`：串行触发最小 workflow chain（支持 startup / style / style-full / chapter-full / writeback / refresh / full 模式）
 
 ---
 

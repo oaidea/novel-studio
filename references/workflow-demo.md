@@ -12,9 +12,9 @@ scripts/init_novel_project.py <project-dir>
 scripts/workflow_runner.py <project-dir> ch_0007 startup
 ```
 
-## Step 3：接入风格链
+## Step 3：补齐章节创作条件
 ```bash
-scripts/workflow_runner.py <project-dir> ch_0007 style-full <project-name>
+scripts/workflow_runner.py <project-dir> ch_0007 chapter-full <project-name>
 ```
 
 ## Step 4：正文写作（人工 / agent）
@@ -31,7 +31,7 @@ scripts/workflow_runner.py <project-dir> ch_0007 writeback
 scripts/workflow_runner.py <project-dir> ch_0007 refresh
 ```
 
-## Step 6：一键跑最小链（当前版）
+## Step 6：一键跑全链（当前版）
 ```bash
 scripts/workflow_runner.py <project-dir> ch_0007 full <project-name>
 ```
