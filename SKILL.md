@@ -147,6 +147,9 @@ novels/<项目名>/
 4. 建议的卷结构
 5. 下一步待确认项
 
+如需按标准工作室结构初始化项目，优先参考：
+- `references/templates/project-skeleton-template.md`
+
 ---
 
 ## 五、设定与规划模式
@@ -308,6 +311,19 @@ novels/<项目名>/
    - 文件名写“对象是什么”，状态写在目录层，不写在文件名里
    - 默认 kebab-case
    - 中文名仅保留给少量总纲类 / 报告类文件
+
+### 推荐参考文件
+- `references/project-governance.md`
+- `references/card-system.md`
+- `references/naming-conventions.md`
+- `references/entrypoint-layering.md`
+- `references/templates/project-skeleton-template.md`
+- `references/templates/character-card-template.md`
+- `references/templates/character-change-log-template.md`
+- `references/templates/space-card-template.md`
+- `references/templates/space-change-log-template.md`
+- `references/templates/scene-card-template.md`
+- `references/templates/scene-change-log-template.md`
 
 ### 推荐输出
 
