@@ -100,12 +100,37 @@ def main() -> int:
             ("indexes", indexes.exists(), indexes),
         ]
         lines = [f"# {chapter_id} 可写状态报告", ""]
+        missing = []
         for label, ok, path in ready_items:
             rel = path.relative_to(root) if path.exists() or path.parent.exists() else path
             mark = "x" if ok else " "
             lines.append(f"- [{mark}] {label}：`{rel}`")
+            if not ok:
+                missing.append(label)
         can_write = all(ok for _, ok, _ in ready_items)
-        lines += ["", f"## 结论", f"- 当前是否适合正式写正文：{'是' if can_write else '否'}", ""]
+        lines += ["", "## 缺失项", ""]
+        if missing:
+            lines.extend([f"- {item}" for item in missing])
+        else:
+            lines.append("- 无")
+
+        next_actions = []
+        if not summary.exists():
+            next_actions.append("先补 summary 或确认上一章承接信息")
+        if not packet.exists():
+            next_actions.append("先跑 startup 生成 packet")
+        if not style_card.exists():
+            next_actions.append("先跑 style-full 或抽取项目母风格")
+        if style_card.exists() and not style_overlay.exists():
+            next_actions.append("先生成章节 style overlay")
+        if not indexes.exists():
+            next_actions.append("先跑 refresh 准备 active indexes")
+        if not next_actions:
+            next_actions.append("现在可以正式开始写正文")
+
+        lines += ["", "## 下一步建议动作", ""]
+        lines.extend([f"- {item}" for item in next_actions])
+        lines += ["", "## 结论", f"- 当前是否适合正式写正文：{'是' if can_write else '否'}", ""]
         startup_report.parent.mkdir(parents=True, exist_ok=True)
         startup_report.write_text("\n".join(lines))
         note(f"chapter readiness report written: {startup_report}")

@@ -34,6 +34,7 @@
 - 确保 style overlay 已存在
 - 确保 indexes 已存在
 - 生成“本章可写状态报告”
+- 报告中包含缺失项与下一步建议动作
 
 ### 3. 风格接入（独立使用时）
 使用：
@@ -65,37 +66,3 @@
 
 结果：
 - 刷新 / 准备下一章启动所需的 active indexes
-
----
-
-## 二、可用模式
-
-- `startup`
-- `style`
-- `style-full`
-- `chapter-full`
-- `writeback`
-- `refresh`
-- `full`
-
-### `chapter-full` 当前作用
-- 作为章节级创作启动入口
-- 在真正写正文前，把 packet / summary / style overlay / indexes 补齐到最低可运行状态
-- 输出“这一章现在是否适合正式开写”的状态报告
-
----
-
-## 三、最小闭环
-
-一章的最小闭环应是：
-
-1. startup
-2. chapter-full
-3. draft chapter
-4. writeback
-5. refresh
-6. next chapter startup
-
-一句话：
-
-> **新章不是从正文开始，而是从 startup + chapter-full 开始；一章也不是写完正文就结束，而是要走完 writeback + refresh。**

@@ -24,6 +24,8 @@ scripts/workflow_runner.py <project-dir> ch_0007 chapter-full <project-name>
 - style overlay
 - indexes
 - 本章可写状态报告
+- 缺失项清单
+- 下一步建议动作
 
 ## Step 4：正文写作（人工 / agent）
 依赖：
@@ -37,9 +39,4 @@ scripts/workflow_runner.py <project-dir> ch_0007 chapter-full <project-name>
 ```bash
 scripts/workflow_runner.py <project-dir> ch_0007 writeback
 scripts/workflow_runner.py <project-dir> ch_0007 refresh
-```
-
-## Step 6：一键跑全链（当前版）
-```bash
-scripts/workflow_runner.py <project-dir> ch_0007 full <project-name>
 ```
