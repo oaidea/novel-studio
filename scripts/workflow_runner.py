@@ -57,6 +57,7 @@ def main() -> int:
     summary = summaries / f"{chapter_id}-summary.md"
     state_json = root / ".novel-studio" / "state.json"
     meta_json = root / ".novel-studio" / "chapter-meta.json"
+    startup_report = root / ".novel-studio" / "logs" / f"{chapter_id}-chapter-full-report.md"
 
     if mode == "startup":
         run([str(SCRIPT_DIR / "chapter_startup.py"), str(root), chapter_id])
@@ -90,7 +91,24 @@ def main() -> int:
         if not indexes.exists():
             note("indexes directory not found; refresh will prepare it")
             run([str(SCRIPT_DIR / "index_refresh.py"), str(root)])
-        note("chapter-full ready: packet / summary / style overlay / indexes are prepared for writing")
+
+        ready_items = [
+            ("summary", summary.exists(), summary),
+            ("chapter packet", packet.exists(), packet),
+            ("project style card", style_card.exists(), style_card),
+            ("style overlay", style_overlay.exists(), style_overlay),
+            ("indexes", indexes.exists(), indexes),
+        ]
+        lines = [f"# {chapter_id} 可写状态报告", ""]
+        for label, ok, path in ready_items:
+            rel = path.relative_to(root) if path.exists() or path.parent.exists() else path
+            mark = "x" if ok else " "
+            lines.append(f"- [{mark}] {label}：`{rel}`")
+        can_write = all(ok for _, ok, _ in ready_items)
+        lines += ["", f"## 结论", f"- 当前是否适合正式写正文：{'是' if can_write else '否'}", ""]
+        startup_report.parent.mkdir(parents=True, exist_ok=True)
+        startup_report.write_text("\n".join(lines))
+        note(f"chapter readiness report written: {startup_report}")
     elif mode == "writeback":
         run([str(SCRIPT_DIR / "writeback_sync.py"), str(root), chapter_id])
     elif mode == "refresh":

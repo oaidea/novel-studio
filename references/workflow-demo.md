@@ -17,6 +17,14 @@ scripts/workflow_runner.py <project-dir> ch_0007 startup
 scripts/workflow_runner.py <project-dir> ch_0007 chapter-full <project-name>
 ```
 
+### `chapter-full` 输出
+- summary
+- chapter packet
+- project style card
+- style overlay
+- indexes
+- 本章可写状态报告
+
 ## Step 4：正文写作（人工 / agent）
 依赖：
 - packet

@@ -33,6 +33,7 @@
 - 确保项目母风格卡已存在
 - 确保 style overlay 已存在
 - 确保 indexes 已存在
+- 生成“本章可写状态报告”
 
 ### 3. 风格接入（独立使用时）
 使用：
@@ -80,14 +81,7 @@
 ### `chapter-full` 当前作用
 - 作为章节级创作启动入口
 - 在真正写正文前，把 packet / summary / style overlay / indexes 补齐到最低可运行状态
-
-### `full` 当前具备的最小自愈逻辑
-- 如果没有项目风格卡，会自动调用 `extract_project_style.py`
-- 如果没有 chapter packet，会自动先跑 startup
-- 如果没有 summary，会自动补 summary scaffold
-- 如果已有项目风格卡但没有 style overlay，会自动调用 `build_style_packet.py`
-- 如果没有 state / meta，会自动补 json scaffold
-- 如果没有 indexes，会提示并在 refresh 时准备
+- 输出“这一章现在是否适合正式开写”的状态报告
 
 ---
 
