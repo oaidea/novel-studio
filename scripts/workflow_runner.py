@@ -38,6 +38,12 @@ def ensure_json(path: Path, data: dict) -> None:
         note(f"prepared json scaffold: {path}")
 
 
+def list_some(folder: Path, limit: int = 5) -> list[str]:
+    if not folder.exists():
+        return []
+    return [str(p.name) for p in sorted(folder.glob("*.md"))[:limit]]
+
+
 def main() -> int:
     if len(sys.argv) < 4:
         print("usage: workflow_runner.py <project-dir> <chapter-id> <mode> [project-name]")
@@ -150,6 +156,34 @@ def main() -> int:
 
         lines += ["", "## 风险提示", ""]
         lines.extend([f"- {item}" for item in risks])
+
+        input_pkg = [
+            f"- `.{'/novel-studio' if False else ''}`",
+        ]
+        lines += ["", "## 建议输入包", "", f"- `.{''}`"]
+        lines += [f"- `{summary.relative_to(root)}`", f"- `{packet.relative_to(root)}`", f"- `{style_overlay.relative_to(root)}`"]
+        if indexes.exists():
+            for name in ["active-characters.md", "active-events.md", "active-spaces.md", "active-scenes.md", "pending-foreshadowing.md"]:
+                idx = indexes / name
+                if idx.exists():
+                    lines.append(f"- `{idx.relative_to(root)}`")
+        char_dir = root / "settings" / "subsettings" / "characters"
+        event_dir = root / "settings" / "subsettings" / "events"
+        space_dir = root / "settings" / "subsettings" / "spaces" / "cards"
+        scene_dir = root / "settings" / "subsettings" / "scenes" / "cards"
+        lines += ["", "## 可选附加卡片（按需）", ""]
+        for title, folder in [
+            ("人物卡", char_dir),
+            ("事件卡", event_dir),
+            ("空间卡", space_dir),
+            ("场景卡", scene_dir),
+        ]:
+            samples = list_some(folder)
+            if samples:
+                lines.append(f"### {title}")
+                lines.extend([f"- `{(folder / s).relative_to(root)}`" for s in samples])
+                lines.append("")
+
         lines += ["", "## 结论", f"- 当前是否适合正式写正文：{'是' if can_write else '否'}", ""]
         startup_report.parent.mkdir(parents=True, exist_ok=True)
         startup_report.write_text("\n".join(lines))
