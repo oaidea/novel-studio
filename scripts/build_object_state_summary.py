@@ -3,6 +3,7 @@
 build_object_state_summary.py
 
 Create a chapter-scoped object state summary scaffold based on packet object lists.
+Current version also tries to pull a first line / first useful bullet from matched cards.
 """
 
 from pathlib import Path
@@ -32,6 +33,48 @@ def extract_items(packet: Path, section_name: str):
     return items
 
 
+def match_card(folder: Path, item: str) -> Path | None:
+    if not folder.exists() or not item:
+        return None
+    item_lower = item.lower()
+    for p in sorted(folder.glob("*.md")):
+        stem = p.stem.lower()
+        if stem in {"readme", "scene-index"}:
+            continue
+        if item_lower in stem:
+            return p
+    return None
+
+
+def extract_hint(path: Path) -> str:
+    if not path or not path.exists():
+        return ""
+    for line in path.read_text().splitlines():
+        stripped = line.strip()
+        if stripped.startswith("- "):
+            return stripped[2:].strip()
+        if stripped and not stripped.startswith("#") and not stripped.startswith(">"):
+            return stripped
+    return ""
+
+
+def block(title: str, items: list[str], folder: Path):
+    lines = [title, ""]
+    if not items:
+        lines.append("- ")
+        return lines
+    for item in items:
+        card = match_card(folder, item)
+        hint = extract_hint(card) if card else ""
+        if card and hint:
+            lines.append(f"- {item}：{hint}（参考 `{card.name}`）")
+        elif card:
+            lines.append(f"- {item}（参考 `{card.name}`）")
+        else:
+            lines.append(f"- {item}：")
+    return lines
+
+
 def main() -> int:
     if len(sys.argv) < 3:
         print("usage: build_object_state_summary.py <project-dir> <chapter-id>")
@@ -48,15 +91,19 @@ def main() -> int:
     spaces = extract_items(packet, "空间")
     scenes = extract_items(packet, "场景")
 
+    char_dir = root / "settings" / "subsettings" / "characters"
+    event_dir = root / "settings" / "subsettings" / "events"
+    space_dir = root / "settings" / "subsettings" / "spaces" / "cards"
+    scene_dir = root / "settings" / "subsettings" / "scenes" / "cards"
+
     lines = [f"# {chapter_id} 对象状态摘要", ""]
-    lines += ["## 一、相关人物当前状态", ""]
-    lines += [f"- {x}：" for x in chars] if chars else ["- "]
-    lines += ["", "## 二、相关事件当前状态", ""]
-    lines += [f"- {x}：" for x in events] if events else ["- "]
-    lines += ["", "## 三、相关空间当前状态", ""]
-    lines += [f"- {x}：" for x in spaces] if spaces else ["- "]
-    lines += ["", "## 四、相关场景当前状态", ""]
-    lines += [f"- {x}：" for x in scenes] if scenes else ["- "]
+    lines += block("## 一、相关人物当前状态", chars, char_dir)
+    lines += [""]
+    lines += block("## 二、相关事件当前状态", events, event_dir)
+    lines += [""]
+    lines += block("## 三、相关空间当前状态", spaces, space_dir)
+    lines += [""]
+    lines += block("## 四、相关场景当前状态", scenes, scene_dir)
     lines += ["", "## 五、这一章最该记住的对象约束", "- ", "- ", "- ", ""]
 
     out.write_text("\n".join(lines))
