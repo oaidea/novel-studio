@@ -47,11 +47,18 @@ def main() -> int:
     chapter_id = sys.argv[2]
     style_card_arg = sys.argv[3]
     style_card = root / style_card_arg
+    packet = root / ".novel-studio" / "packets" / f"{chapter_id}-packet.md"
 
     out = root / ".novel-studio" / "packets" / f"{chapter_id}-style-overlay.md"
     out.parent.mkdir(parents=True, exist_ok=True)
 
-    lines = [f"# {chapter_id} 风格调用说明", "", f"- 继承的项目风格卡：`{style_card_arg}`", ""]
+    lines = [
+        f"# {chapter_id} 风格调用说明",
+        "",
+        f"- 继承的项目风格卡：`{style_card_arg}`",
+        f"- chapter packet：`{packet.relative_to(root)}`",
+        "",
+    ]
 
     if style_card.exists():
         lines += ["## 项目母风格参考摘录", ""]

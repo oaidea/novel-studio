@@ -1,14 +1,8 @@
 #!/usr/bin/env python3
 """
-novel-studio chapter startup script skeleton
+chapter_startup.py
 
-Planned purpose:
-- create startup checklist for a new chapter
-- create chapter packet placeholder
-- create chapter summary placeholder for previous chapter if needed
-
-Current state:
-- scaffold placeholder only
+Prepare startup scaffolds for a new chapter.
 """
 
 from pathlib import Path
@@ -25,12 +19,37 @@ def main() -> int:
 
     packet = root / ".novel-studio" / "packets" / f"{chapter_id}-packet.md"
     startup = root / ".novel-studio" / "logs" / f"{chapter_id}-startup-checklist.md"
+    style_overlay = root / ".novel-studio" / "packets" / f"{chapter_id}-style-overlay.md"
+    style_check = root / ".novel-studio" / "logs" / f"{chapter_id}-style-check.md"
 
     packet.parent.mkdir(parents=True, exist_ok=True)
     startup.parent.mkdir(parents=True, exist_ok=True)
 
     if not packet.exists():
-        packet.write_text(f"# {chapter_id} Chapter Packet\n\n- 本章目标：\n- 本章阻力：\n- 本章代价：\n- 本章结束状态：\n")
+        packet.write_text(
+            f"# {chapter_id} Chapter Packet\n\n"
+            "## 一、本章目标\n- \n\n"
+            "## 二、本章阻力\n- \n\n"
+            "## 三、本章代价\n- \n\n"
+            "## 四、本章结束状态\n- \n\n"
+            "## 五、必须推进的伏笔\n- \n\n"
+            "## 六、必须保持稳定的人物状态\n- \n\n"
+            "## 七、本章依赖的对象卡\n"
+            "### 人物\n- \n"
+            "### 空间\n- \n"
+            "### 场景\n- \n"
+            "### 事件\n- \n"
+            "### 时间线\n- \n"
+            "### 伏笔\n- \n\n"
+            "## 八、项目风格继承\n"
+            f"- style overlay：`{style_overlay.relative_to(root)}`\n"
+            "- 本章局部风格偏移：\n"
+            "- 本章不可偏离的母风格底线：\n\n"
+            "## 九、与上一章的最小承接摘要\n- \n\n"
+            "## 十、本章禁止事项\n- \n\n"
+            "## 十一、章末钩子类型\n- \n\n"
+            f"## 十二、关联文件\n- style overlay：`{style_overlay.relative_to(root)}`\n- style check：`{style_check.relative_to(root)}`\n"
+        )
 
     if not startup.exists():
         startup.write_text(

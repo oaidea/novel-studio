@@ -49,9 +49,18 @@ def main() -> int:
     out.parent.mkdir(parents=True, exist_ok=True)
 
     style_card = root / "settings" / "subsettings" / "project-style-card.md"
+    packet = root / ".novel-studio" / "packets" / f"{chapter_id}-packet.md"
+    overlay = root / ".novel-studio" / "packets" / f"{chapter_id}-style-overlay.md"
     style_ref = str(style_card.relative_to(root)) if style_card.exists() else "（未找到项目风格卡）"
 
-    lines = [f"# {chapter_id} 风格一致性检查", "", f"- 项目风格卡：`{style_ref}`", ""]
+    lines = [
+        f"# {chapter_id} 风格一致性检查",
+        "",
+        f"- 项目风格卡：`{style_ref}`",
+        f"- chapter packet：`{packet.relative_to(root)}`",
+        f"- style overlay：`{overlay.relative_to(root)}`",
+        "",
+    ]
 
     if style_card.exists():
         lines += ["## 项目母风格参考摘录", ""]
