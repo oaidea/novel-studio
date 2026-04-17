@@ -88,6 +88,7 @@ def main() -> int:
     state_json = root / ".novel-studio" / "state.json"
     meta_json = root / ".novel-studio" / "chapter-meta.json"
     startup_report = root / ".novel-studio" / "logs" / f"{chapter_id}-chapter-full-report.md"
+    input_pack_default = root / ".novel-studio" / "logs" / f"{chapter_id}-input-pack.md"
 
     if mode == "startup":
         run([str(SCRIPT_DIR / "chapter_startup.py"), str(root), chapter_id])
@@ -201,6 +202,7 @@ def main() -> int:
         lines += ["", "## 输入包档位建议", ""]
         lines.append(f"- 当前推荐：{recommendation}")
         lines.append(f"- 原因：{recommendation_reason}")
+        lines.append(f"- 默认输入包：`{input_pack_default.relative_to(root)}`")
 
         lines += ["", "## 建议输入包", "", "### 必带（核心输入层）", ""]
         lines += [f"- `{summary.relative_to(root)}`", f"- `{packet.relative_to(root)}`", f"- `{style_overlay.relative_to(root)}`", f"- `{object_summary.relative_to(root)}`"]
