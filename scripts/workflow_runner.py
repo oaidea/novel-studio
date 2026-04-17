@@ -152,12 +152,12 @@ def main() -> int:
             next_actions.append((1, "先补 summary 或确认上一章承接信息", f"scripts/workflow_runner.py {root} {chapter_id} chapter-full {project_name}"))
         if not packet.exists():
             next_actions.append((1, "先跑 startup 生成 packet", f"scripts/workflow_runner.py {root} {chapter_id} startup"))
+        if not object_summary.exists():
+            next_actions.append((1, "先生成对象状态摘要", f"scripts/build_object_state_summary.py {root} {chapter_id}"))
         if not style_card.exists():
             next_actions.append((2, "先跑 style-full 或抽取项目母风格", f"scripts/workflow_runner.py {root} {chapter_id} style-full {project_name}"))
         if style_card.exists() and not style_overlay.exists():
             next_actions.append((2, "先生成章节 style overlay", f"scripts/workflow_runner.py {root} {chapter_id} style-full {project_name}"))
-        if not object_summary.exists():
-            next_actions.append((2, "先生成对象状态摘要", f"scripts/build_object_state_summary.py {root} {chapter_id}"))
         if not indexes.exists():
             next_actions.append((3, "先跑 refresh 准备 active indexes", f"scripts/workflow_runner.py {root} {chapter_id} refresh"))
         if not next_actions:
@@ -188,9 +188,9 @@ def main() -> int:
         lines += ["", "## 风险提示", ""]
         lines.extend([f"- {item}" for item in risks])
 
-        lines += ["", "## 建议输入包", "", "### 必带", ""]
+        lines += ["", "## 建议输入包", "", "### 必带（核心输入层）", ""]
         lines += [f"- `{summary.relative_to(root)}`", f"- `{packet.relative_to(root)}`", f"- `{style_overlay.relative_to(root)}`", f"- `{object_summary.relative_to(root)}`"]
-        lines += ["", "### 推荐带", ""]
+        lines += ["", "### 推荐带（增强上下文层）", ""]
         if indexes.exists():
             added = False
             for name in ["active-characters.md", "active-events.md", "active-spaces.md", "active-scenes.md", "pending-foreshadowing.md"]:
@@ -207,7 +207,7 @@ def main() -> int:
         event_dir = root / "settings" / "subsettings" / "events"
         space_dir = root / "settings" / "subsettings" / "spaces" / "cards"
         scene_dir = root / "settings" / "subsettings" / "scenes" / "cards"
-        lines += ["", "### 按需带", ""]
+        lines += ["", "### 按需带（对象全文层）", ""]
         any_optional = False
         for title, folder, section in [
             ("人物卡", char_dir, "人物"),
