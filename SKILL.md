@@ -340,6 +340,7 @@ novels/<项目名>/
 - `references/chapter-meta-schema.md`
 - `references/active-index-templates.md`
 - `references/semi-automation-plan.md`
+- `references/automation-expansion-plan.md`
 - `references/scripts-index.md`
 - `references/event-card-system.md`
 - `references/templates/project-skeleton-template.md`
@@ -371,6 +372,9 @@ novels/<项目名>/
 ### 可选脚本入口
 - `scripts/init_novel_project.py`：初始化 packet-first 项目骨架
 - `scripts/chapter_startup.py`：为新章节生成 packet 与启动清单骨架
+- `scripts/writeback_sync.py`：为章节回写生成 checklist scaffold
+- `scripts/index_refresh.py`：初始化 / 刷新活动索引 scaffold
+- `scripts/style_check.py`：为单章生成风格一致性检查 scaffold
 
 ---
 
