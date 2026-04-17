@@ -79,11 +79,6 @@ def main() -> int:
                 summary,
                 f"# {chapter_id} 摘要\n\n## 一、本章发生了什么\n- \n\n## 二、人物停在哪\n- \n\n## 三、事件推进到哪\n- \n\n## 四、空间 / 场景状态变化\n- \n\n## 五、时间锚点\n- \n\n## 六、下一章承接点\n- \n",
             )
-        if not style_overlay.exists() and style_card.exists():
-            ensure_file(
-                style_overlay,
-                f"# {chapter_id} 风格调用说明\n\n- 继承的项目风格卡：`{style_card.relative_to(root)}`\n- 本章局部风格偏移：\n- 本章不可偏离的母风格底线：\n",
-            )
         ensure_json(
             state_json,
             {
@@ -100,6 +95,10 @@ def main() -> int:
 
         if not packet.exists():
             run([str(SCRIPT_DIR / "chapter_startup.py"), str(root), chapter_id])
+
+        if style_card.exists() and not style_overlay.exists():
+            run([str(SCRIPT_DIR / "build_style_packet.py"), str(root), chapter_id, str(style_card.relative_to(root))])
+
         run([str(SCRIPT_DIR / "writeback_sync.py"), str(root), chapter_id])
         run([str(SCRIPT_DIR / "style_check.py"), str(root), chapter_id])
         run([str(SCRIPT_DIR / "index_refresh.py"), str(root)])

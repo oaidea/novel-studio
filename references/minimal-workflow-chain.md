@@ -75,7 +75,7 @@
 - 如果没有项目风格卡，会提示先生成母风格
 - 如果没有 chapter packet，会自动先跑 startup
 - 如果没有 summary，会自动补 summary scaffold
-- 如果已有项目风格卡但没有 style overlay，会自动补 style overlay scaffold
+- 如果已有项目风格卡但没有 style overlay，会自动调用 `build_style_packet.py`
 - 如果没有 state / meta，会自动补 json scaffold
 - 如果没有 indexes，会提示并在 refresh 时准备
 
