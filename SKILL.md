@@ -92,7 +92,10 @@ novels/<项目名>/
 └── .novel-studio/
     ├── state.json
     ├── chapter-meta.json
-    └── summaries/
+    ├── summaries/
+    ├── packets/
+    ├── indexes/
+    └── logs/
 ```
 
 ### 最小可运行集
@@ -265,6 +268,7 @@ novels/<项目名>/
 - `.novel-studio/summaries/ch_XXXX.md`
 - 若采用 packet-first 策略，再同步更新该章 `chapter packet`
 - 若本章推进了关键事件，再同步更新事件卡 / 事件变化记录
+- 若项目已进入结构化维护，再同步更新 `.novel-studio/indexes/` 中的活动索引
 
 ---
 
@@ -328,6 +332,10 @@ novels/<项目名>/
 - `references/entrypoint-layering.md`
 - `references/chapter-packet-architecture.md`
 - `references/packet-first-chapter-workflow.md`
+- `references/novel-studio-internal-structure.md`
+- `references/state-json-schema.md`
+- `references/chapter-meta-schema.md`
+- `references/active-index-templates.md`
 - `references/event-card-system.md`
 - `references/templates/project-skeleton-template.md`
 - `references/templates/chapter-packet-template.md`
@@ -349,7 +357,8 @@ novels/<项目名>/
 3. 产出本章框架
 4. 生成 chapter packet
 5. 列出本章预计会改动哪些人物卡 / 时间锚点 / 事件卡 / 空间卡 / 场景卡 / 伏笔记录
-6. 若用户允许，再进入正文生成
+6. 如项目已进入长期维护，再明确 `.novel-studio/packets/`、`summaries/`、`indexes/` 将如何更新
+7. 若用户允许，再进入正文生成
 
 ---
 
