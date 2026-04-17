@@ -86,6 +86,25 @@ def extract_usage_hint(path: Path) -> str:
     return ""
 
 
+def next_report_version(logs_dir: Path, chapter_id: str) -> int:
+    """Find the next sequential version number for this chapter's report."""
+    if not logs_dir.exists():
+        return 1
+    existing = sorted(logs_dir.glob(f"{chapter_id}-chapter-full-report-v*.md"))
+    if not existing:
+        return 1
+    highest = 0
+    for p in existing:
+        stem = p.stem
+        for part in stem.split("-"):
+            if part.startswith("v") and part[1:].isdigit():
+                num = int(part[1:])
+                if num > highest:
+                    highest = num
+                break
+    return highest + 1
+
+
 def build_workflow_routing(
     summary: Path,
     packet: Path,
@@ -195,7 +214,7 @@ def main() -> int:
     summary = summaries / f"{chapter_id}-summary.md"
     state_json = root / ".novel-studio" / "state.json"
     meta_json = root / ".novel-studio" / "chapter-meta.json"
-    startup_report = root / ".novel-studio" / "logs" / f"{chapter_id}-chapter-full-report.md"
+    logs_dir = root / ".novel-studio" / "logs"
     input_pack_default = root / ".novel-studio" / "logs" / f"{chapter_id}-input-pack.md"
 
     if mode == "startup":
@@ -234,6 +253,11 @@ def main() -> int:
             run([str(SCRIPT_DIR / "index_refresh.py"), str(root)])
         run([str(SCRIPT_DIR / "build_input_pack.py"), str(root), chapter_id])
 
+        # Determine next sequential version number
+        version_num = next_report_version(logs_dir, chapter_id)
+        version_tag = f"v{version_num}"
+        startup_report = logs_dir / f"{chapter_id}-chapter-full-report-{version_tag}.md"
+
         ready_items = [
             ("summary", summary.exists(), summary),
             ("chapter packet", packet.exists(), packet),
@@ -247,6 +271,7 @@ def main() -> int:
             "## 生成信息",
             "",
             f"- 生成时间（UTC）：{datetime.now(timezone.utc).isoformat()}",
+            f"- 报告版本：{version_tag}",
             f"- 报告阶段：{REPORT_STAGE}",
             f"- packet 状态：{'present' if packet.exists() else 'missing'}",
             f"- style overlay 状态：{'present' if style_overlay.exists() else 'missing'}",
