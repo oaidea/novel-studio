@@ -95,8 +95,7 @@ def next_report_version(logs_dir: Path, chapter_id: str) -> int:
         return 1
     highest = 0
     for p in existing:
-        stem = p.stem
-        for part in stem.split("-"):
+        for part in p.stem.split("-"):
             if part.startswith("v") and part[1:].isdigit():
                 num = int(part[1:])
                 if num > highest:
@@ -113,10 +112,6 @@ def build_workflow_routing(
     object_summary: Path,
     indexes: Path,
 ) -> tuple[str, list[str]]:
-    """
-    Decide the recommended workflow mode and sub-steps for this chapter.
-    Returns (route_label, route_steps).
-    """
     has_summary = summary.exists() and summary.stat().st_size >= 80
     has_packet = packet.exists() and packet.stat().st_size >= 120
     has_style_card = style_card.exists()
@@ -194,6 +189,47 @@ def build_workflow_routing(
     )
 
 
+def write_structured_summary(
+    report_path: Path,
+    chapter_id: str,
+    version_tag: str,
+    can_write: bool,
+    route_label: str,
+    route_steps: list[str],
+    recommendation: str,
+    recommendation_reason: str,
+    risks: list[str],
+    input_pack_default: Path,
+    usage_hint: str,
+    ready_items: list[tuple[str, bool, Path]],
+    missing: list[str],
+) -> Path:
+    """Write a machine-readable JSON summary alongside the markdown report."""
+    summary_path = report_path.with_suffix(".json")
+    data = {
+        "chapter": chapter_id,
+        "reportVersion": version_tag,
+        "reportStage": REPORT_STAGE,
+        "generatedAtUtc": datetime.now(timezone.utc).isoformat(),
+        "canWrite": can_write,
+        "workflowRoute": route_label,
+        "workflowRouteSteps": route_steps,
+        "inputPackRecommendation": recommendation,
+        "inputPackReason": recommendation_reason,
+        "inputPackDefault": str(input_pack_default.name),
+        "inputPackUsageHint": usage_hint,
+        "risks": risks,
+        "readyItems": [
+            {"label": label, "ready": ok, "path": str(path.relative_to(path.parents[1])) if path.exists() else str(path)}
+            for label, ok, path in ready_items
+        ],
+        "missingItems": missing,
+    }
+    summary_path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n")
+    note(f"structured summary written: {summary_path}")
+    return summary_path
+
+
 def main() -> int:
     if len(sys.argv) < 4:
         print("usage: workflow_runner.py <project-dir> <chapter-id> <mode> [project-name]")
@@ -215,7 +251,7 @@ def main() -> int:
     state_json = root / ".novel-studio" / "state.json"
     meta_json = root / ".novel-studio" / "chapter-meta.json"
     logs_dir = root / ".novel-studio" / "logs"
-    input_pack_default = root / ".novel-studio" / "logs" / f"{chapter_id}-input-pack.md"
+    input_pack_default = logs_dir / f"{chapter_id}-input-pack.md"
 
     if mode == "startup":
         run([str(SCRIPT_DIR / "chapter_startup.py"), str(root), chapter_id])
@@ -253,7 +289,6 @@ def main() -> int:
             run([str(SCRIPT_DIR / "index_refresh.py"), str(root)])
         run([str(SCRIPT_DIR / "build_input_pack.py"), str(root), chapter_id])
 
-        # Determine next sequential version number
         version_num = next_report_version(logs_dir, chapter_id)
         version_tag = f"v{version_num}"
         startup_report = logs_dir / f"{chapter_id}-chapter-full-report-{version_tag}.md"
@@ -398,6 +433,23 @@ def main() -> int:
         startup_report.parent.mkdir(parents=True, exist_ok=True)
         startup_report.write_text("\n".join(lines))
         note(f"chapter readiness report written: {startup_report}")
+
+        # Write machine-readable JSON summary alongside the markdown report
+        write_structured_summary(
+            startup_report,
+            chapter_id,
+            version_tag,
+            can_write,
+            route_label,
+            route_steps,
+            recommendation,
+            recommendation_reason,
+            risks,
+            input_pack_default,
+            usage_hint,
+            ready_items,
+            missing,
+        )
     elif mode == "writeback":
         run([str(SCRIPT_DIR / "writeback_sync.py"), str(root), chapter_id])
     elif mode == "refresh":
@@ -429,10 +481,8 @@ def main() -> int:
         if not style_card.exists():
             note("project style card not found; extracting project style scaffold now")
             run([str(SCRIPT_DIR / "extract_project_style.py"), str(root), project_name])
-
         if not packet.exists():
             run([str(SCRIPT_DIR / "chapter_startup.py"), str(root), chapter_id])
-
         if style_card.exists() and not style_overlay.exists():
             run([str(SCRIPT_DIR / "build_style_packet.py"), str(root), chapter_id, str(style_card.relative_to(root))])
         if not object_summary.exists() and packet.exists():
