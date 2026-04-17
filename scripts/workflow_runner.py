@@ -67,6 +67,23 @@ def match_from_packet(packet: Path, folder: Path, section_name: str, limit: int 
     return matched
 
 
+def extract_usage_hint(path: Path) -> str:
+    if not path.exists():
+        return ""
+    lines = path.read_text().splitlines()
+    capture = False
+    for line in lines:
+        stripped = line.strip()
+        if stripped == "## 一句话写作说明":
+            capture = True
+            continue
+        if capture and stripped.startswith("## "):
+            break
+        if capture and stripped.startswith("- "):
+            return stripped[2:].strip()
+    return ""
+
+
 def main() -> int:
     if len(sys.argv) < 4:
         print("usage: workflow_runner.py <project-dir> <chapter-id> <mode> [project-name]")
@@ -203,6 +220,9 @@ def main() -> int:
         lines.append(f"- 当前推荐：{recommendation}")
         lines.append(f"- 原因：{recommendation_reason}")
         lines.append(f"- 默认输入包：`{input_pack_default.relative_to(root)}`")
+        usage_hint = extract_usage_hint(input_pack_default)
+        if usage_hint:
+            lines.append(f"- 默认输入包使用说明：{usage_hint}")
 
         lines += ["", "## 建议输入包", "", "### 必带（核心输入层）", ""]
         lines += [f"- `{summary.relative_to(root)}`", f"- `{packet.relative_to(root)}`", f"- `{style_overlay.relative_to(root)}`", f"- `{object_summary.relative_to(root)}`"]
