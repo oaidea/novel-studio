@@ -59,6 +59,7 @@ description: 统一小说创作总技能。整合立项、世界观/角色设定
 - 若用户要“拆某种写法 / 提炼某作者或某作品风格 / 生成风格模板 / 放进风格库”，进入**风格库模式**。
 - 若用户要“整理小说项目 / 清理仓库结构 / 把设定和卡片分层 / 建变化记录 / 统一命名规范 / 做创作工作室逻辑”，进入**项目治理模式**。
 - 若用户要“确定章节框架后尽量不回读前文全文 / 用卡片和摘要来写 / 降低 token 消耗”，进入**chapter packet / packet-first 写作策略**。
+- 若用户要“先根据上一章来推测下一章会出现的人物、空间、时间、事件，再制定本章目的与框架”，也进入**chapter packet / packet-first 写作策略**。
 
 ---
 
@@ -217,6 +218,8 @@ novels/<项目名>/
 
 如果用户希望后续写作尽量不依赖前文全文，或该章已经进入长期维护状态，则额外生成：
 - `chapter packet`（参考 `references/chapter-packet-architecture.md` 与 `references/templates/chapter-packet-template.md`）
+- 上一章最小承接摘要（参考 `references/templates/chapter-summary-template-packet-first.md`）
+- 若时间推进复杂，再补时间锚点（参考 `references/templates/timeline-anchor-template.md`）
 
 ### 阶段3：初稿生成
 
@@ -324,9 +327,12 @@ novels/<项目名>/
 - `references/naming-conventions.md`
 - `references/entrypoint-layering.md`
 - `references/chapter-packet-architecture.md`
+- `references/packet-first-chapter-workflow.md`
 - `references/event-card-system.md`
 - `references/templates/project-skeleton-template.md`
 - `references/templates/chapter-packet-template.md`
+- `references/templates/chapter-summary-template-packet-first.md`
+- `references/templates/timeline-anchor-template.md`
 - `references/templates/character-card-template.md`
 - `references/templates/character-change-log-template.md`
 - `references/templates/space-card-template.md`
@@ -338,11 +344,12 @@ novels/<项目名>/
 
 ### 推荐输出
 
-1. 当前问题诊断
-2. 新结构建议
-3. 迁移映射清单
-4. 需要新增的卡片 / 模板 / 规范文档
-5. 若用户允许，直接落地文件结构调整
+1. 基于上一章摘要预测本章依赖对象（人物 / 空间 / 时间 / 事件 / 伏笔）
+2. 明确本章的人物目的 / 事件目的 / 空间目的 / 时间目的 / 结构目的
+3. 产出本章框架
+4. 生成 chapter packet
+5. 列出本章预计会改动哪些人物卡 / 时间锚点 / 事件卡 / 空间卡 / 场景卡 / 伏笔记录
+6. 若用户允许，再进入正文生成
 
 ---
 
