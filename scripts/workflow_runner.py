@@ -44,6 +44,22 @@ def list_some(folder: Path, limit: int = 5) -> list[str]:
     return [str(p.name) for p in sorted(folder.glob("*.md"))[:limit]]
 
 
+def match_from_packet(packet: Path, folder: Path, limit: int = 5) -> list[Path]:
+    if not packet.exists() or not folder.exists():
+        return []
+    text = packet.read_text().lower()
+    matched = []
+    for p in sorted(folder.glob("*.md")):
+        stem = p.stem.lower()
+        if stem in {"readme", "scene-index"}:
+            continue
+        if stem in text:
+            matched.append(p)
+            if len(matched) >= limit:
+                break
+    return matched
+
+
 def main() -> int:
     if len(sys.argv) < 4:
         print("usage: workflow_runner.py <project-dir> <chapter-id> <mode> [project-name]")
@@ -184,14 +200,14 @@ def main() -> int:
             ("空间卡", space_dir),
             ("场景卡", scene_dir),
         ]:
-            samples = list_some(folder)
-            if samples:
+            matched = match_from_packet(packet, folder)
+            if matched:
                 any_optional = True
-                lines.append(f"#### {title}")
-                lines.extend([f"- `{(folder / s).relative_to(root)}`" for s in samples])
+                lines.append(f"#### {title}（基于 packet 匹配）")
+                lines.extend([f"- `{p.relative_to(root)}`" for p in matched])
                 lines.append("")
         if not any_optional:
-            lines.append("- 暂无附加卡片样本")
+            lines.append("- 当前未从 packet 中匹配到更相关的附加卡片")
 
         lines += ["", "## 结论", f"- 当前是否适合正式写正文：{'是' if can_write else '否'}", ""]
         startup_report.parent.mkdir(parents=True, exist_ok=True)
