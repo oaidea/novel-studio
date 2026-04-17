@@ -332,6 +332,8 @@ novels/<项目名>/
 - `references/entrypoint-layering.md`
 - `references/chapter-packet-architecture.md`
 - `references/packet-first-chapter-workflow.md`
+- `references/packet-first-execution-checklist.md`
+- `references/fulltext-escalation-policy.md`
 - `references/novel-studio-internal-structure.md`
 - `references/state-json-schema.md`
 - `references/chapter-meta-schema.md`
@@ -341,6 +343,8 @@ novels/<项目名>/
 - `references/templates/chapter-packet-template.md`
 - `references/templates/chapter-summary-template-packet-first.md`
 - `references/templates/timeline-anchor-template.md`
+- `references/templates/chapter-startup-checklist-template.md`
+- `references/templates/chapter-writeback-checklist-template.md`
 - `references/templates/character-card-template.md`
 - `references/templates/character-change-log-template.md`
 - `references/templates/space-card-template.md`
@@ -358,7 +362,8 @@ novels/<项目名>/
 4. 生成 chapter packet
 5. 列出本章预计会改动哪些人物卡 / 时间锚点 / 事件卡 / 空间卡 / 场景卡 / 伏笔记录
 6. 如项目已进入长期维护，再明确 `.novel-studio/packets/`、`summaries/`、`indexes/` 将如何更新
-7. 若用户允许，再进入正文生成
+7. 必要时附上 `chapter startup checklist` 与 `chapter writeback checklist`
+8. 若用户允许，再进入正文生成
 
 ---
 
