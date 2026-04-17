@@ -41,7 +41,7 @@ def ensure_json(path: Path, data: dict) -> None:
 def main() -> int:
     if len(sys.argv) < 4:
         print("usage: workflow_runner.py <project-dir> <chapter-id> <mode> [project-name]")
-        print("modes: startup | style | writeback | refresh | full")
+        print("modes: startup | style | style-full | writeback | refresh | full")
         return 1
 
     root = Path(sys.argv[1]).expanduser().resolve()
@@ -63,6 +63,16 @@ def main() -> int:
     elif mode == "style":
         if not style_card.exists():
             note("project style card not found; consider running extract_project_style.py first")
+        run([str(SCRIPT_DIR / "style_check.py"), str(root), chapter_id])
+    elif mode == "style-full":
+        if not style_card.exists():
+            note("project style card not found; extracting project style scaffold now")
+            run([str(SCRIPT_DIR / "extract_project_style.py"), str(root), project_name])
+        if not packet.exists():
+            note("chapter packet not found; startup will prepare one")
+            run([str(SCRIPT_DIR / "chapter_startup.py"), str(root), chapter_id])
+        if style_card.exists() and not style_overlay.exists():
+            run([str(SCRIPT_DIR / "build_style_packet.py"), str(root), chapter_id, str(style_card.relative_to(root))])
         run([str(SCRIPT_DIR / "style_check.py"), str(root), chapter_id])
     elif mode == "writeback":
         run([str(SCRIPT_DIR / "writeback_sync.py"), str(root), chapter_id])
@@ -107,7 +117,7 @@ def main() -> int:
         run([str(SCRIPT_DIR / "index_refresh.py"), str(root)])
     else:
         print(f"unknown mode: {mode}")
-        print("modes: startup | style | writeback | refresh | full")
+        print("modes: startup | style | style-full | writeback | refresh | full")
         return 1
 
     print(f"workflow mode '{mode}' completed for {chapter_id}")
