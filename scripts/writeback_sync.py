@@ -2,16 +2,21 @@
 """
 writeback_sync.py
 
-Planned purpose:
-- generate or refresh writeback checklist for a finished chapter
-- help enforce packet-first closure after chapter drafting
-
-Current state:
-- scaffold placeholder only
+Check which packet-first writeback artifacts exist for a chapter and
+produce a checklist report under .novel-studio/logs/.
 """
 
 from pathlib import Path
+import json
 import sys
+
+
+def check(path: Path) -> bool:
+    return path.exists()
+
+
+def mark(ok: bool) -> str:
+    return "x" if ok else " "
 
 
 def main() -> int:
@@ -21,25 +26,45 @@ def main() -> int:
 
     root = Path(sys.argv[1]).expanduser().resolve()
     chapter_id = sys.argv[2]
-    out = root / ".novel-studio" / "logs" / f"{chapter_id}-writeback-checklist.md"
-    out.parent.mkdir(parents=True, exist_ok=True)
+    logs_dir = root / ".novel-studio" / "logs"
+    logs_dir.mkdir(parents=True, exist_ok=True)
+    out = logs_dir / f"{chapter_id}-writeback-checklist.md"
 
-    if not out.exists():
-        out.write_text(
-            f"# {chapter_id} 回写清单\n\n"
-            "- [ ] 已更新本章 summary\n"
-            "- [ ] 已更新本章 packet\n"
-            "- [ ] 已更新人物变化记录\n"
-            "- [ ] 已更新事件变化记录\n"
-            "- [ ] 已更新空间 / 场景变化记录\n"
-            "- [ ] 已更新时间锚点\n"
-            "- [ ] 已更新伏笔状态\n"
-            "- [ ] 已更新 state.json\n"
-            "- [ ] 已更新 chapter-meta.json\n"
-            "- [ ] 已更新 indexes/\n"
-        )
+    summary = root / ".novel-studio" / "summaries" / f"{chapter_id}-summary.md"
+    packet = root / ".novel-studio" / "packets" / f"{chapter_id}-packet.md"
+    style_overlay = root / ".novel-studio" / "packets" / f"{chapter_id}-style-overlay.md"
+    style_check = root / ".novel-studio" / "logs" / f"{chapter_id}-style-check.md"
+    indexes_dir = root / ".novel-studio" / "indexes"
+    state_json = root / ".novel-studio" / "state.json"
+    meta_json = root / ".novel-studio" / "chapter-meta.json"
 
-    print(f"prepared writeback checklist for {chapter_id}")
+    items = [
+        ("已更新本章 summary", check(summary), summary),
+        ("已更新本章 packet", check(packet), packet),
+        ("已更新本章 style overlay", check(style_overlay), style_overlay),
+        ("已完成本章 style check", check(style_check), style_check),
+        ("已更新 state.json", check(state_json), state_json),
+        ("已更新 chapter-meta.json", check(meta_json), meta_json),
+        ("已建立 indexes/", indexes_dir.exists(), indexes_dir),
+    ]
+
+    lines = [f"# {chapter_id} 回写检查", ""]
+    for label, ok, path in items:
+        rel = path.relative_to(root) if path.exists() or path.parent.exists() else path
+        lines.append(f"- [{mark(ok)}] {label} — `{rel}`")
+
+    lines += ["", "## 说明", "- 人物 / 事件 / 空间 / 场景变化记录当前仍以人工判断为主。", "- 该脚本当前负责检查关键 packet-first 产物是否存在。", ""]
+    out.write_text("\n".join(lines))
+
+    missing = [label for label, ok, _ in items if not ok]
+    if missing:
+        print("missing:")
+        for label in missing:
+            print("-", label)
+    else:
+        print(f"writeback looks complete for {chapter_id}")
+
+    print(f"wrote checklist: {out}")
     return 0
 
 
