@@ -26,6 +26,7 @@ scripts/workflow_runner.py <project-dir> ch_0007 chapter-full <project-name>
 - 本章可写状态报告
 - 缺失项清单
 - 下一步建议动作
+- 推荐命令
 
 ## Step 4：正文写作（人工 / agent）
 依赖：

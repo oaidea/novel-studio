@@ -116,20 +116,22 @@ def main() -> int:
 
         next_actions = []
         if not summary.exists():
-            next_actions.append("先补 summary 或确认上一章承接信息")
+            next_actions.append(("先补 summary 或确认上一章承接信息", f"scripts/workflow_runner.py {root} {chapter_id} chapter-full {project_name}"))
         if not packet.exists():
-            next_actions.append("先跑 startup 生成 packet")
+            next_actions.append(("先跑 startup 生成 packet", f"scripts/workflow_runner.py {root} {chapter_id} startup"))
         if not style_card.exists():
-            next_actions.append("先跑 style-full 或抽取项目母风格")
+            next_actions.append(("先跑 style-full 或抽取项目母风格", f"scripts/workflow_runner.py {root} {chapter_id} style-full {project_name}"))
         if style_card.exists() and not style_overlay.exists():
-            next_actions.append("先生成章节 style overlay")
+            next_actions.append(("先生成章节 style overlay", f"scripts/workflow_runner.py {root} {chapter_id} style-full {project_name}"))
         if not indexes.exists():
-            next_actions.append("先跑 refresh 准备 active indexes")
+            next_actions.append(("先跑 refresh 准备 active indexes", f"scripts/workflow_runner.py {root} {chapter_id} refresh"))
         if not next_actions:
-            next_actions.append("现在可以正式开始写正文")
+            next_actions.append(("现在可以正式开始写正文", "直接进入正文写作"))
 
         lines += ["", "## 下一步建议动作", ""]
-        lines.extend([f"- {item}" for item in next_actions])
+        for label, cmd in next_actions:
+            lines.append(f"- {label}")
+            lines.append(f"  - 推荐命令：`{cmd}`")
         lines += ["", "## 结论", f"- 当前是否适合正式写正文：{'是' if can_write else '否'}", ""]
         startup_report.parent.mkdir(parents=True, exist_ok=True)
         startup_report.write_text("\n".join(lines))
