@@ -42,8 +42,9 @@ scripts/workflow_runner.py <project-dir> ch_0007 style
 scripts/workflow_runner.py <project-dir> ch_0007 full
 ```
 
-### `full` 模式会做的提醒
-- 没有项目风格卡时提示先生成
-- 没有 packet 时自动先 startup
-- 没有 indexes 时提示 refresh 会补
-- 没有 summary 时提示连续性仍偏弱
+### `full` 模式当前会自动补的内容
+- summary scaffold
+- style overlay scaffold（前提是已有项目风格卡）
+- state.json scaffold
+- chapter-meta.json scaffold
+- chapter packet scaffold（通过 startup）
