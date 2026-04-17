@@ -14,6 +14,7 @@ from datetime import datetime, timezone
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
+REPORT_STAGE = "chapter-full / packet-first / style-aware / object-summary / input-pack v1"
 
 
 def run(cmd: list[str]) -> None:
@@ -153,7 +154,16 @@ def main() -> int:
             ("indexes", indexes.exists(), indexes),
         ]
         lines = [f"# {chapter_id} 可写状态报告", ""]
-        lines += ["## 生成信息", "", f"- 生成时间（UTC）：{datetime.now(timezone.utc).isoformat()}", f"- packet 状态：{'present' if packet.exists() else 'missing'}", f"- style overlay 状态：{'present' if style_overlay.exists() else 'missing'}", f"- object summary 状态：{'present' if object_summary.exists() else 'missing'}", ""]
+        lines += [
+            "## 生成信息",
+            "",
+            f"- 生成时间（UTC）：{datetime.now(timezone.utc).isoformat()}",
+            f"- 报告阶段：{REPORT_STAGE}",
+            f"- packet 状态：{'present' if packet.exists() else 'missing'}",
+            f"- style overlay 状态：{'present' if style_overlay.exists() else 'missing'}",
+            f"- object summary 状态：{'present' if object_summary.exists() else 'missing'}",
+            "",
+        ]
         missing = []
         for label, ok, path in ready_items:
             rel = path.relative_to(root) if path.exists() or path.parent.exists() else path
