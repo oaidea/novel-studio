@@ -1,7 +1,7 @@
 ---
 name: novel-studio
-version: 0.6.8
-description: 统一小说创作总技能，已升级为面向长篇项目治理、packet-first 单章写作、项目级母风格建模、章节启动工作流与低 token 上下文装载的创作工作台。
+version: 0.6.9
+description: 统一小说创作总技能，已升级为面向长篇项目治理、packet-first 单章写作、项目级母风格建模、章节启动工作流、章节依赖图谱与低 token 上下文装载的创作工作台。
 ---
 
 # Novel Studio
@@ -377,7 +377,7 @@ novels/<项目名>/
 - `scripts/writeback_sync.py`：为章节回写生成 checklist scaffold
 - `scripts/index_refresh.py`：初始化 / 刷新活动索引 scaffold
 - `scripts/style_check.py`：为单章生成风格一致性检查 scaffold
-- `scripts/workflow_runner.py`：串行触发最小 workflow chain（支持 startup / style / style-full / chapter-full / writeback / refresh / full 模式）
+- `scripts/workflow_runner.py`：串行触发最小 workflow chain（支持 startup / style / style-full / chapter-full / writeback / refresh / deps / deps-all / full 模式）
 
 ---
 

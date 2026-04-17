@@ -58,17 +58,12 @@ It is not a black-box tool that “writes the whole novel for you”. It is a st
 
 ---
 
-## v0.6.8 Highlights / v0.6.8 更新亮点
-
-This release focuses on turning Novel Studio from a writing skill into a chapter-oriented low-token fiction workflow system.
-
-本次版本重点是把 Novel Studio 从“写作 skill”推进成“面向单章、低 token、可治理的创作工作流系统”。
+## v0.6.9 Highlights / v0.6.9 更新亮点
 
 Highlights / 亮点：
-- **Project Governance**：项目治理模式、目录分层、卡片系统、命名规范
+- **Chapter Dependency Graph / 章节依赖图谱**：`build_chapter_deps.py` 自动从 packet/summary/章节文本中提取九种依赖关系（foreshadow、callback、character-intro、space-return 等），维护 `chapter-deps.json`，防止伏笔断线
 - **Packet-First Writing**：chapter packet、summary-first、对象状态摘要、最小输入包
-- **Project Style Model**：项目母风格卡、单章风格调用、风格一致性检查
-- **Workflow Orchestration**：startup / style-full / chapter-full / full 模式
+- **Workflow Orchestration**：startup / style-full / chapter-full / deps / deps-all / refresh / writeback / full 模式
 - **Input Pack Tiers**：模型极简版 / 模型标准版 / 人工审阅版输入包
 
 ---
@@ -119,5 +114,5 @@ This is probably overkill for:
 
 ## Current Version / 当前版本
 
-- **v0.6.8**
+- **v0.6.9**
 - Repository / 仓库：<https://github.com/oaidea/novel-studio>

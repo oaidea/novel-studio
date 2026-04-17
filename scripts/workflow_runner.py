@@ -454,6 +454,10 @@ def main() -> int:
         run([str(SCRIPT_DIR / "writeback_sync.py"), str(root), chapter_id])
     elif mode == "refresh":
         run([str(SCRIPT_DIR / "index_refresh.py"), str(root)])
+    elif mode == "deps":
+        run([str(SCRIPT_DIR / "build_chapter_deps.py"), str(root), chapter_id])
+    elif mode == "deps-all":
+        run([str(SCRIPT_DIR / "build_chapter_deps.py"), str(root), "all"])
     elif mode == "full":
         if not packet.exists():
             note("chapter packet not found; startup will prepare one")
@@ -494,7 +498,7 @@ def main() -> int:
         run([str(SCRIPT_DIR / "index_refresh.py"), str(root)])
     else:
         print(f"unknown mode: {mode}")
-        print("modes: startup | style | style-full | chapter-full | writeback | refresh | full")
+        print("modes: startup | style | style-full | chapter-full | writeback | refresh | deps | deps-all | full")
         return 1
 
     print(f"workflow mode '{mode}' completed for {chapter_id}")

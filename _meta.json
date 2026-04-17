@@ -1,7 +1,7 @@
 {
   "name": "novel-studio",
-  "version": "0.6.8",
-  "description": "统一小说创作总技能，已升级为面向长篇项目治理、packet-first 单章写作、项目级母风格建模、章节启动工作流与低 token 上下文装载的创作工作台。",
+  "version": "0.6.9",
+  "description": "统一小说创作总技能，已升级为面向长篇项目治理、packet-first 单章写作、项目级母风格建模、章节启动工作流、章节依赖图谱与低 token 上下文装载的创作工作台。",
   "author": "Xiao Penzi",
   "source": "local-workspace",
   "type": "skill"
