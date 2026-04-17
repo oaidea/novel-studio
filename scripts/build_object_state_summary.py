@@ -3,8 +3,8 @@
 build_object_state_summary.py
 
 Create a chapter-scoped object state summary scaffold based on packet object lists.
-Current version tries to pull a first useful hint and adds a second line reserved
-for chapter-specific constraints.
+Current version tries to pull a first useful hint from cards and, when present,
+prefers the last bullet from matching change logs as the freshest state clue.
 """
 
 from pathlib import Path
@@ -44,6 +44,17 @@ def match_card(folder: Path, item: str) -> Path | None:
     return None
 
 
+def match_change_log(folder: Path, item: str) -> Path | None:
+    if not folder.exists() or not item:
+        return None
+    item_lower = item.lower()
+    for p in sorted(folder.glob("*.md")):
+        stem = p.stem.lower()
+        if item_lower in stem:
+            return p
+    return None
+
+
 def extract_hint(path: Path) -> str:
     if not path or not path.exists():
         return ""
@@ -56,15 +67,31 @@ def extract_hint(path: Path) -> str:
     return ""
 
 
-def block(title: str, items: list[str], folder: Path):
+def extract_latest_change(path: Path) -> str:
+    if not path or not path.exists():
+        return ""
+    bullets = []
+    for line in path.read_text().splitlines():
+        stripped = line.strip()
+        if stripped.startswith("- "):
+            bullets.append(stripped[2:].strip())
+    return bullets[-1] if bullets else ""
+
+
+def block(title: str, items: list[str], card_folder: Path, change_folder: Path):
     lines = [title, ""]
     if not items:
         lines.append("- ")
         return lines
     for item in items:
-        card = match_card(folder, item)
+        card = match_card(card_folder, item)
+        change = match_change_log(change_folder, item)
         hint = extract_hint(card) if card else ""
-        if card and hint:
+        latest = extract_latest_change(change) if change else ""
+
+        if latest:
+            lines.append(f"- {item}：最近变化 = {latest}{f'（参考 `{change.name}`）' if change else ''}")
+        elif card and hint:
             lines.append(f"- {item}：当前状态 = {hint}（参考 `{card.name}`）")
         elif card:
             lines.append(f"- {item}：当前状态待补（参考 `{card.name}`）")
@@ -91,18 +118,22 @@ def main() -> int:
     scenes = extract_items(packet, "场景")
 
     char_dir = root / "settings" / "subsettings" / "characters"
+    char_changes = char_dir / "changes"
     event_dir = root / "settings" / "subsettings" / "events"
+    event_changes = event_dir / "changes"
     space_dir = root / "settings" / "subsettings" / "spaces" / "cards"
+    space_changes = root / "settings" / "subsettings" / "spaces" / "changes"
     scene_dir = root / "settings" / "subsettings" / "scenes" / "cards"
+    scene_changes = root / "settings" / "subsettings" / "scenes" / "changes"
 
     lines = [f"# {chapter_id} 对象状态摘要", ""]
-    lines += block("## 一、相关人物当前状态", chars, char_dir)
+    lines += block("## 一、相关人物当前状态", chars, char_dir, char_changes)
     lines += [""]
-    lines += block("## 二、相关事件当前状态", events, event_dir)
+    lines += block("## 二、相关事件当前状态", events, event_dir, event_changes)
     lines += [""]
-    lines += block("## 三、相关空间当前状态", spaces, space_dir)
+    lines += block("## 三、相关空间当前状态", spaces, space_dir, space_changes)
     lines += [""]
-    lines += block("## 四、相关场景当前状态", scenes, scene_dir)
+    lines += block("## 四、相关场景当前状态", scenes, scene_dir, scene_changes)
     lines += ["", "## 五、这一章最该记住的对象约束", "- ", "- ", "- ", ""]
 
     out.write_text("\n".join(lines))
