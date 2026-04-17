@@ -157,21 +157,27 @@ def main() -> int:
         lines += ["", "## 风险提示", ""]
         lines.extend([f"- {item}" for item in risks])
 
-        input_pkg = [
-            f"- `.{'/novel-studio' if False else ''}`",
-        ]
-        lines += ["", "## 建议输入包", "", f"- `.{''}`"]
+        lines += ["", "## 建议输入包", "", "### 必带", ""]
         lines += [f"- `{summary.relative_to(root)}`", f"- `{packet.relative_to(root)}`", f"- `{style_overlay.relative_to(root)}`"]
+        lines += ["", "### 推荐带", ""]
         if indexes.exists():
+            added = False
             for name in ["active-characters.md", "active-events.md", "active-spaces.md", "active-scenes.md", "pending-foreshadowing.md"]:
                 idx = indexes / name
                 if idx.exists():
                     lines.append(f"- `{idx.relative_to(root)}`")
+                    added = True
+            if not added:
+                lines.append("- 暂无活动索引文件")
+        else:
+            lines.append("- 暂无 indexes，可先 refresh")
+
         char_dir = root / "settings" / "subsettings" / "characters"
         event_dir = root / "settings" / "subsettings" / "events"
         space_dir = root / "settings" / "subsettings" / "spaces" / "cards"
         scene_dir = root / "settings" / "subsettings" / "scenes" / "cards"
-        lines += ["", "## 可选附加卡片（按需）", ""]
+        lines += ["", "### 按需带", ""]
+        any_optional = False
         for title, folder in [
             ("人物卡", char_dir),
             ("事件卡", event_dir),
@@ -180,9 +186,12 @@ def main() -> int:
         ]:
             samples = list_some(folder)
             if samples:
-                lines.append(f"### {title}")
+                any_optional = True
+                lines.append(f"#### {title}")
                 lines.extend([f"- `{(folder / s).relative_to(root)}`" for s in samples])
                 lines.append("")
+        if not any_optional:
+            lines.append("- 暂无附加卡片样本")
 
         lines += ["", "## 结论", f"- 当前是否适合正式写正文：{'是' if can_write else '否'}", ""]
         startup_report.parent.mkdir(parents=True, exist_ok=True)
