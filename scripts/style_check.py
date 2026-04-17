@@ -3,11 +3,39 @@
 style_check.py
 
 Create a style-consistency check file for a chapter and, when available,
-embed the current project style card path for reference.
+embed a few relevant sections from the current project style card for reference.
 """
 
 from pathlib import Path
 import sys
+
+
+TARGET_HEADINGS = [
+    "## 四、叙事气质",
+    "## 五、句子与段落习惯",
+    "## 六、对话质感",
+    "## 七、感官描写方式",
+    "## 十、章末钩子习惯",
+    "## 十二、一句话母风格总结",
+]
+
+
+def extract_sections(text: str, headings: list[str]) -> list[str]:
+    lines = text.splitlines()
+    out = []
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        if line in headings:
+            out.append(line)
+            i += 1
+            while i < len(lines) and not lines[i].startswith("## "):
+                out.append(lines[i])
+                i += 1
+            out.append("")
+            continue
+        i += 1
+    return out
 
 
 def main() -> int:
@@ -23,18 +51,25 @@ def main() -> int:
     style_card = root / "settings" / "subsettings" / "project-style-card.md"
     style_ref = str(style_card.relative_to(root)) if style_card.exists() else "（未找到项目风格卡）"
 
-    out.write_text(
-        f"# {chapter_id} 风格一致性检查\n\n"
-        f"- 项目风格卡：`{style_ref}`\n\n"
-        "- [ ] 句子节奏仍像这本书\n"
-        "- [ ] 对话气质没有偏离项目母风格\n"
-        "- [ ] 感官描写方式仍符合项目习惯\n"
-        "- [ ] 信息释放方式没有突然变味\n"
-        "- [ ] 情绪表达没有越出项目边界\n"
-        "- [ ] 章末钩子仍符合本书钩子习惯\n"
-        "- [ ] 这章只是任务不同，不是风格断裂\n"
-    )
+    lines = [f"# {chapter_id} 风格一致性检查", "", f"- 项目风格卡：`{style_ref}`", ""]
 
+    if style_card.exists():
+        lines += ["## 项目母风格参考摘录", ""]
+        lines += extract_sections(style_card.read_text(), TARGET_HEADINGS)
+
+    lines += [
+        "## 检查清单",
+        "",
+        "- [ ] 句子节奏仍像这本书",
+        "- [ ] 对话气质没有偏离项目母风格",
+        "- [ ] 感官描写方式仍符合项目习惯",
+        "- [ ] 信息释放方式没有突然变味",
+        "- [ ] 情绪表达没有越出项目边界",
+        "- [ ] 章末钩子仍符合本书钩子习惯",
+        "- [ ] 这章只是任务不同，不是风格断裂",
+    ]
+
+    out.write_text("\n".join(lines) + "\n")
     print(f"prepared style check scaffold for {chapter_id}")
     return 0
 
