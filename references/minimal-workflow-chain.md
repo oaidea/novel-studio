@@ -72,7 +72,7 @@
 - `full`
 
 ### `full` 当前具备的最小自愈逻辑
-- 如果没有项目风格卡，会提示先生成母风格
+- 如果没有项目风格卡，会自动调用 `extract_project_style.py`
 - 如果没有 chapter packet，会自动先跑 startup
 - 如果没有 summary，会自动补 summary scaffold
 - 如果已有项目风格卡但没有 style overlay，会自动调用 `build_style_packet.py`

@@ -40,13 +40,14 @@ def ensure_json(path: Path, data: dict) -> None:
 
 def main() -> int:
     if len(sys.argv) < 4:
-        print("usage: workflow_runner.py <project-dir> <chapter-id> <mode>")
+        print("usage: workflow_runner.py <project-dir> <chapter-id> <mode> [project-name]")
         print("modes: startup | style | writeback | refresh | full")
         return 1
 
     root = Path(sys.argv[1]).expanduser().resolve()
     chapter_id = sys.argv[2]
     mode = sys.argv[3]
+    project_name = sys.argv[4] if len(sys.argv) >= 5 else root.name
 
     style_card = root / "settings" / "subsettings" / "project-style-card.md"
     packet = root / ".novel-studio" / "packets" / f"{chapter_id}-packet.md"
@@ -68,8 +69,6 @@ def main() -> int:
     elif mode == "refresh":
         run([str(SCRIPT_DIR / "index_refresh.py"), str(root)])
     elif mode == "full":
-        if not style_card.exists():
-            note("project style card not found; consider running extract_project_style.py first")
         if not packet.exists():
             note("chapter packet not found; startup will prepare one")
         if not indexes.exists():
@@ -92,6 +91,10 @@ def main() -> int:
             },
         )
         ensure_json(meta_json, {"chapters": []})
+
+        if not style_card.exists():
+            note("project style card not found; extracting project style scaffold now")
+            run([str(SCRIPT_DIR / "extract_project_style.py"), str(root), project_name])
 
         if not packet.exists():
             run([str(SCRIPT_DIR / "chapter_startup.py"), str(root), chapter_id])
