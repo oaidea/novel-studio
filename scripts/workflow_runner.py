@@ -38,22 +38,29 @@ def ensure_json(path: Path, data: dict) -> None:
         note(f"prepared json scaffold: {path}")
 
 
-def list_some(folder: Path, limit: int = 5) -> list[str]:
-    if not folder.exists():
-        return []
-    return [str(p.name) for p in sorted(folder.glob("*.md"))[:limit]]
-
-
-def match_from_packet(packet: Path, folder: Path, limit: int = 5) -> list[Path]:
+def match_from_packet(packet: Path, folder: Path, section_name: str, limit: int = 5) -> list[Path]:
     if not packet.exists() or not folder.exists():
         return []
-    text = packet.read_text().lower()
+    text = packet.read_text().splitlines()
+    capture = False
+    wanted = []
+    for line in text:
+        stripped = line.strip()
+        if stripped == f"### {section_name}":
+            capture = True
+            continue
+        if capture and stripped.startswith("### "):
+            break
+        if capture and stripped.startswith("- "):
+            item = stripped[2:].strip().lower()
+            if item:
+                wanted.append(item)
     matched = []
     for p in sorted(folder.glob("*.md")):
         stem = p.stem.lower()
         if stem in {"readme", "scene-index"}:
             continue
-        if stem in text:
+        if any(w and w in stem for w in wanted):
             matched.append(p)
             if len(matched) >= limit:
                 break
@@ -194,20 +201,20 @@ def main() -> int:
         scene_dir = root / "settings" / "subsettings" / "scenes" / "cards"
         lines += ["", "### 按需带", ""]
         any_optional = False
-        for title, folder in [
-            ("人物卡", char_dir),
-            ("事件卡", event_dir),
-            ("空间卡", space_dir),
-            ("场景卡", scene_dir),
+        for title, folder, section in [
+            ("人物卡", char_dir, "人物"),
+            ("事件卡", event_dir, "事件"),
+            ("空间卡", space_dir, "空间"),
+            ("场景卡", scene_dir, "场景"),
         ]:
-            matched = match_from_packet(packet, folder)
+            matched = match_from_packet(packet, folder, section)
             if matched:
                 any_optional = True
-                lines.append(f"#### {title}（基于 packet 匹配）")
+                lines.append(f"#### {title}（基于 packet 对象清单匹配）")
                 lines.extend([f"- `{p.relative_to(root)}`" for p in matched])
                 lines.append("")
         if not any_optional:
-            lines.append("- 当前未从 packet 中匹配到更相关的附加卡片")
+            lines.append("- 当前未从 packet 对象清单中匹配到更相关的附加卡片")
 
         lines += ["", "## 结论", f"- 当前是否适合正式写正文：{'是' if can_write else '否'}", ""]
         startup_report.parent.mkdir(parents=True, exist_ok=True)
