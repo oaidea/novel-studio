@@ -393,15 +393,19 @@ novels/<项目名>/
 
 ### 推荐参考文件
 - `references/project-style-model.md`
+- `references/project-style-generation.md`
+- `references/project-style-extraction.md`
 - `references/style-consistency-checklist.md`
 - `references/templates/project-style-card-template.md`
 - `references/templates/chapter-style-overlay-template.md`
+- `references/templates/style-generation-template.md`
 
 ### 推荐输出
 1. 项目母风格定义
 2. 章节风格调用规则
 3. 本章允许的局部风格偏移
 4. 写后风格一致性检查
+5. 若用户要求“一键复刻”或“从已有章节提纯”，则额外输出母风格生成结果
 
 ---
 
