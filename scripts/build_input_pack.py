@@ -37,12 +37,12 @@ def main() -> int:
 
     min_lines = [f"# {chapter_id} 模型输入包（极简）", "", "## 核心输入", ""]
     min_lines.extend([f"- `{p.relative_to(root)}`" for p in core_min])
-    min_lines += ["", "## 说明", "- 目标：极致节省 token。", "- 适用于本章承接简单、对象变化少的情况。", ""]
+    min_lines += ["", "## 使用说明", "- 适合本章承接简单、对象变化少时直接使用。", "- 如果写到对象承接卡壳，再补看对象状态摘要。", ""]
     model_min.write_text("\n".join(min_lines))
 
     std_lines = [f"# {chapter_id} 模型输入包（标准）", "", "## 核心输入", ""]
     std_lines.extend([f"- `{p.relative_to(root)}`" for p in core_std])
-    std_lines += ["", "## 说明", "- 目标：在低 token 前提下，保留对象状态层。", "- 适用于本章对象变化较多或承接要求更高的情况。", ""]
+    std_lines += ["", "## 使用说明", "- 适合本章对象变化更多、承接要求更高时使用。", "- 默认优先用这版来稳住对象状态与风格。", ""]
     model_std.write_text("\n".join(std_lines))
 
     use_min = packet.exists() and packet.stat().st_size < 140 and object_summary.exists() and object_summary.stat().st_size < 120
@@ -50,6 +50,11 @@ def main() -> int:
     tier = "极简" if use_min else "标准"
     default_lines = [f"# {chapter_id} 模型输入包（默认）", "", f"- 当前推荐档位：{tier}", f"- 默认映射文件：`{chosen.relative_to(root)}`", "", "## 核心输入", ""]
     default_lines.extend([f"- `{p.relative_to(root)}`" for p in (core_min if use_min else core_std)])
+    default_lines += ["", "## 一句话写作说明", ""]
+    if use_min:
+        default_lines.append("- 本章优先依赖 summary + packet + style overlay 开写；若对象承接不足，再补 object state summary。")
+    else:
+        default_lines.append("- 本章建议直接使用标准包，先稳住对象状态与风格，再进入正文。")
     model_default.write_text("\n".join(default_lines) + "\n")
 
     review_lines = [f"# {chapter_id} 人工审阅输入包", "", "## 核心输入", ""]
@@ -59,7 +64,7 @@ def main() -> int:
         review_lines.extend([f"- `{p.relative_to(root)}`" for p in existing_indexes])
     else:
         review_lines.append("- 暂无活动索引文件")
-    review_lines += ["", "## 说明", "- 目标：给人快速核对本章准备状态。", "- 比模型输入版更完整，适合检查承接、对象和风格。", ""]
+    review_lines += ["", "## 使用说明", "- 适合人在正式开写前快速核对承接、对象与风格。", "- 比模型输入版更完整，但不追求最低 token。", ""]
     review_out.write_text("\n".join(review_lines))
 
     print(f"prepared input pack files: {model_min} , {model_std} , {model_default} , {review_out}")
