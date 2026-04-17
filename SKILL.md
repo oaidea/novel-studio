@@ -58,6 +58,7 @@ description: 统一小说创作总技能。整合立项、世界观/角色设定
 - 若用户要“学习写作 / 提升写作能力 / 制定训练计划”，进入**学习模式**，并要求每轮学习都附带项目内应用任务，避免纯理论空转。
 - 若用户要“拆某种写法 / 提炼某作者或某作品风格 / 生成风格模板 / 放进风格库”，进入**风格库模式**。
 - 若用户要“整理小说项目 / 清理仓库结构 / 把设定和卡片分层 / 建变化记录 / 统一命名规范 / 做创作工作室逻辑”，进入**项目治理模式**。
+- 若用户要“确定章节框架后尽量不回读前文全文 / 用卡片和摘要来写 / 降低 token 消耗”，进入**chapter packet / packet-first 写作策略**。
 
 ---
 
@@ -214,6 +215,9 @@ novels/<项目名>/
 5. 场景约束
 6. 本章钩子类型
 
+如果用户希望后续写作尽量不依赖前文全文，或该章已经进入长期维护状态，则额外生成：
+- `chapter packet`（参考 `references/chapter-packet-architecture.md` 与 `references/templates/chapter-packet-template.md`）
+
 ### 阶段3：初稿生成
 
 要求：
@@ -256,6 +260,8 @@ novels/<项目名>/
 - `.novel-studio/state.json`
 - `.novel-studio/chapter-meta.json`
 - `.novel-studio/summaries/ch_XXXX.md`
+- 若采用 packet-first 策略，再同步更新该章 `chapter packet`
+- 若本章推进了关键事件，再同步更新事件卡 / 事件变化记录
 
 ---
 
@@ -317,13 +323,18 @@ novels/<项目名>/
 - `references/card-system.md`
 - `references/naming-conventions.md`
 - `references/entrypoint-layering.md`
+- `references/chapter-packet-architecture.md`
+- `references/event-card-system.md`
 - `references/templates/project-skeleton-template.md`
+- `references/templates/chapter-packet-template.md`
 - `references/templates/character-card-template.md`
 - `references/templates/character-change-log-template.md`
 - `references/templates/space-card-template.md`
 - `references/templates/space-change-log-template.md`
 - `references/templates/scene-card-template.md`
 - `references/templates/scene-change-log-template.md`
+- `references/templates/event-card-template.md`
+- `references/templates/event-change-log-template.md`
 
 ### 推荐输出
 
