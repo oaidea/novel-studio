@@ -14,7 +14,7 @@ from datetime import datetime, timezone
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-REPORT_STAGE = "chapter-full / packet-first / style-aware / object-summary / input-pack v1"
+REPORT_STAGE = "chapter-full / packet-first / style-aware / object-summary / input-pack v2"
 
 
 def run(cmd: list[str]) -> None:
@@ -84,6 +84,95 @@ def extract_usage_hint(path: Path) -> str:
         if capture and stripped.startswith("- "):
             return stripped[2:].strip()
     return ""
+
+
+def build_workflow_routing(
+    summary: Path,
+    packet: Path,
+    style_card: Path,
+    style_overlay: Path,
+    object_summary: Path,
+    indexes: Path,
+) -> tuple[str, list[str]]:
+    """
+    Decide the recommended workflow mode and sub-steps for this chapter.
+    Returns (route_label, route_steps).
+    """
+    has_summary = summary.exists() and summary.stat().st_size >= 80
+    has_packet = packet.exists() and packet.stat().st_size >= 120
+    has_style_card = style_card.exists()
+    has_style_overlay = style_overlay.exists()
+    has_object_summary = object_summary.exists() and object_summary.stat().st_size >= 80
+    has_indexes = indexes.exists() and any(indexes.glob("*.md"))
+
+    can_write = has_summary and has_packet and has_style_overlay and has_object_summary
+
+    if can_write:
+        if packet.stat().st_size < 140 and object_summary.stat().st_size < 120:
+            return (
+                "极简直写路线（轻量输入包）",
+                [
+                    "当前章已具备核心输入层（summary + packet + style overlay + object summary）",
+                    "建议直接用 chapter-full-report 中的极简输入包开始写正文",
+                    "如写到一半对象承接卡壳，再回头补 object state 全文",
+                ],
+            )
+        else:
+            return (
+                "标准路线（稳守输入包）",
+                [
+                    "当前章已具备完整核心输入层",
+                    "建议直接用 chapter-full-report 中的标准输入包开始写正文",
+                    "全程保持 packet 对象清单在前台，承接稳定时无需升级",
+                ],
+            )
+
+    missing = []
+    if not has_packet:
+        missing.append("packet")
+    if not has_style_overlay:
+        missing.append("style overlay")
+    if not has_object_summary:
+        missing.append("object summary")
+    if not has_summary:
+        missing.append("summary")
+    if not has_indexes:
+        missing.append("indexes")
+
+    if "packet" in missing or "style overlay" in missing:
+        return (
+            "先补完核心结构层",
+            [
+                f"缺少：{', '.join(missing)}",
+                "建议先跑：scripts/workflow_runner.py <root> <chapter> style-full <project>",
+                "这会依次生成 packet → style overlay → object summary",
+            ],
+        )
+
+    if "object summary" in missing:
+        return (
+            "先生成对象状态摘要",
+            [
+                "packet 和 style overlay 已就绪，建议先生成 object summary",
+                "建议跑：scripts/build_object_state_summary.py <root> <chapter>",
+                "object summary 就绪后即可进入标准路线",
+            ],
+        )
+
+    if not has_indexes:
+        return (
+            "先刷新活动索引",
+            [
+                "核心结构层已具备，建议先跑 refresh 建立活动索引",
+                "建议跑：scripts/workflow_runner.py <root> <chapter> refresh",
+                "indexes 就绪后整体上下文层会更完整",
+            ],
+        )
+
+    return (
+        "等待补全",
+        [f"还缺：{', '.join(missing)}，请先补齐后再运行 chapter-full"],
+    )
 
 
 def main() -> int:
@@ -177,6 +266,14 @@ def main() -> int:
             lines.extend([f"- {item}" for item in missing])
         else:
             lines.append("- 无")
+
+        route_label, route_steps = build_workflow_routing(
+            summary, packet, style_card, style_overlay, object_summary, indexes
+        )
+        lines += ["", "## 本章工作流路由", ""]
+        lines.append(f"**路线：`{route_label}`**")
+        for step in route_steps:
+            lines.append(f"- {step}")
 
         next_actions = []
         if not summary.exists():
