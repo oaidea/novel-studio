@@ -47,6 +47,7 @@ It is not a black-box tool that “writes the whole novel for you”. It is a st
 - characterization review / 人设检查
 - timeline review / 时间线检查
 - style polish and de-AI editing / 文风优化与去 AI 味
+- internal capability name: `humanize`; user-facing Chinese alias: **去AI味** / 内部能力名统一为 `humanize`，用户侧中文别名统一叫 **去AI味**
 
 ### 6. Semi-Automation / 半自动工作流
 - init workflow / 初始化工作流
@@ -55,6 +56,7 @@ It is not a black-box tool that “writes the whole novel for you”. It is a st
 - chapter-full / 章节可写状态报告
 - writeback / refresh / style check / 回写、刷新与风格检查
 - workflow runner / 统一 workflow 入口
+- `humanize` / **去AI味** mode for chapter-sidecar polishing pass / 面向章节旁路稿的去AI味工作流入口（支持 `light / medium / heavy`，默认 `medium`）
 
 ---
 
@@ -63,8 +65,9 @@ It is not a black-box tool that “writes the whole novel for you”. It is a st
 Highlights / 亮点：
 - **Chapter Dependency Graph / 章节依赖图谱**：`build_chapter_deps.py` 自动从 packet/summary/章节文本中提取九种依赖关系（foreshadow、callback、character-intro、space-return 等），维护 `chapter-deps.json`，防止伏笔断线
 - **Packet-First Writing**：chapter packet、summary-first、对象状态摘要、最小输入包
-- **Workflow Orchestration**：startup / style-full / chapter-full / deps / deps-all / refresh / writeback / full 模式
+- **Workflow Orchestration**：startup / style-full / chapter-full / humanize / deps / deps-all / refresh / writeback / full 模式
 - **Input Pack Tiers**：模型极简版 / 模型标准版 / 人工审阅版输入包
+- **Humanize / 去AI味 naming unified**：内部能力名统一为 `humanize`，用户侧中文统一说“去AI味”
 
 ---
 

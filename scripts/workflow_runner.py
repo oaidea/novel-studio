@@ -189,6 +189,49 @@ def build_workflow_routing(
     )
 
 
+def build_humanize_recommendation(
+    summary: Path,
+    packet: Path,
+    style_overlay: Path,
+    object_summary: Path,
+) -> tuple[str, str, list[str]]:
+    """Return (level, recommendation, reasons)."""
+    reasons = []
+    total_size = 0
+    for p in [summary, packet, style_overlay, object_summary]:
+        if p.exists():
+            total_size += p.stat().st_size
+
+    if summary.exists() and summary.stat().st_size < 120:
+        reasons.append("summary 偏薄，正文容易补写成解释腔")
+    if packet.exists() and packet.stat().st_size < 180:
+        reasons.append("packet 偏薄，章节约束不足时更容易出现模型套话")
+    if object_summary.exists() and object_summary.stat().st_size < 120:
+        reasons.append("对象状态层偏薄，人物动作与语气容易被写平")
+    if style_overlay.exists() and style_overlay.stat().st_size < 120:
+        reasons.append("style overlay 偏薄，文气约束不够，容易出现统一模型腔")
+
+    if not reasons and total_size > 0:
+        return (
+            "light",
+            "可选去AI味",
+            ["当前结构层较完整，若正文初稿出现解释腔、句式过工或人物统一腔，再做一轮轻量去AI味即可"],
+        )
+
+    if len(reasons) >= 3:
+        return (
+            "medium",
+            "建议写完后先去AI味，再考虑发布/定稿",
+            reasons,
+        )
+
+    return (
+        "light",
+        "建议做一轮轻量去AI味",
+        reasons or ["当前章节建议在正式定稿前做一轮轻修，压掉明显 AI 味"],
+    )
+
+
 def write_structured_summary(
     report_path: Path,
     chapter_id: str,
@@ -198,6 +241,9 @@ def write_structured_summary(
     route_steps: list[str],
     recommendation: str,
     recommendation_reason: str,
+    humanize_level: str,
+    humanize_recommendation: str,
+    humanize_reasons: list[str],
     risks: list[str],
     input_pack_default: Path,
     usage_hint: str,
@@ -216,6 +262,14 @@ def write_structured_summary(
         "workflowRouteSteps": route_steps,
         "inputPackRecommendation": recommendation,
         "inputPackReason": recommendation_reason,
+        "humanize": {
+            "internalName": "humanize",
+            "displayName": "去AI味",
+            "recommended": humanize_recommendation,
+            "level": humanize_level,
+            "reasons": humanize_reasons,
+            "sidecarOutputPattern": ".novel-studio/logs/<chapter>-humanize-pass.md"
+        },
         "inputPackDefault": str(input_pack_default.name),
         "inputPackUsageHint": usage_hint,
         "risks": risks,
@@ -232,14 +286,15 @@ def write_structured_summary(
 
 def main() -> int:
     if len(sys.argv) < 4:
-        print("usage: workflow_runner.py <project-dir> <chapter-id> <mode> [project-name]")
-        print("modes: startup | style | style-full | chapter-full | writeback | refresh | full")
+        print("usage: workflow_runner.py <project-dir> <chapter-id> <mode> [project-name-or-level]")
+        print("modes: startup | style | style-full | chapter-full | humanize | writeback | refresh | full")
         return 1
 
     root = Path(sys.argv[1]).expanduser().resolve()
     chapter_id = sys.argv[2]
     mode = sys.argv[3]
     project_name = sys.argv[4] if len(sys.argv) >= 5 else root.name
+    humanize_level_arg = sys.argv[4] if len(sys.argv) >= 5 else "medium"
 
     style_card = root / "settings" / "subsettings" / "project-style-card.md"
     packet = root / ".novel-studio" / "packets" / f"{chapter_id}-packet.md"
@@ -330,6 +385,9 @@ def main() -> int:
         route_label, route_steps = build_workflow_routing(
             summary, packet, style_card, style_overlay, object_summary, indexes
         )
+        humanize_level, humanize_recommendation, humanize_reasons = build_humanize_recommendation(
+            summary, packet, style_overlay, object_summary
+        )
         lines += ["", "## 本章工作流路由", ""]
         lines.append(f"**路线：`{route_label}`**")
         for step in route_steps:
@@ -393,6 +451,18 @@ def main() -> int:
         if usage_hint:
             lines.append(f"- 默认输入包使用说明：{usage_hint}")
 
+        lines += ["", "## 去AI味建议（humanize）", ""]
+        lines.append(f"- 当前建议：{humanize_recommendation}")
+        lines.append(f"- 推荐强度：`{humanize_level}`")
+        lines.append("- 用户侧说法：`去AI味`")
+        lines.append("- 内部能力名：`humanize`")
+        lines.append(f"- 推荐命令：`scripts/workflow_runner.py {root} {chapter_id} humanize`")
+        lines.append("- 输出位置：`.novel-studio/logs/<chapter>-humanize-pass.md`")
+        lines.append("- 当前策略：先生成旁路稿，不直接覆盖原章")
+        lines.append("")
+        for reason in humanize_reasons:
+            lines.append(f"- {reason}")
+
         lines += ["", "## 建议输入包", "", "### 必带（核心输入层）", ""]
         lines += [f"- `{summary.relative_to(root)}`", f"- `{packet.relative_to(root)}`", f"- `{style_overlay.relative_to(root)}`", f"- `{object_summary.relative_to(root)}`"]
         lines += ["", "### 推荐带（增强上下文层）", ""]
@@ -444,12 +514,17 @@ def main() -> int:
             route_steps,
             recommendation,
             recommendation_reason,
+            humanize_level,
+            humanize_recommendation,
+            humanize_reasons,
             risks,
             input_pack_default,
             usage_hint,
             ready_items,
             missing,
         )
+    elif mode == "humanize":
+        run([str(SCRIPT_DIR / "humanize_pass.py"), str(root), chapter_id, humanize_level_arg])
     elif mode == "writeback":
         run([str(SCRIPT_DIR / "writeback_sync.py"), str(root), chapter_id])
     elif mode == "refresh":
@@ -498,7 +573,7 @@ def main() -> int:
         run([str(SCRIPT_DIR / "index_refresh.py"), str(root)])
     else:
         print(f"unknown mode: {mode}")
-        print("modes: startup | style | style-full | chapter-full | writeback | refresh | deps | deps-all | full")
+        print("modes: startup | style | style-full | chapter-full | humanize | writeback | refresh | deps | deps-all | full")
         return 1
 
     print(f"workflow mode '{mode}' completed for {chapter_id}")
