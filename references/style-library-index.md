@@ -9,6 +9,13 @@
 - [凡尘箓动作与感官专项卡（小动作 / 具体感官 / 轻异显形）](./style-library-fanchenlu-sensory.md)
 - [凡尘箓节奏推进专项卡（渐异收紧 / 关系托底 / 章尾下推）](./style-library-fanchenlu-pacing.md)
 - [凡尘箓风格一页版调度卡（统一调度 / 快速调用）](./style-library-fanchenlu-onepage.md)
+- [网文人话对白专项卡（去AI味 / 临场反应 / 熟人感与气口差异）](./style-library-webnovel-human-dialogue.md)
+- [诡秘之主风格参考卡（非凡悬疑 / 调查推进 / 神秘感分层揭露）](./style-library-guimi.md)
+- [大奉打更人风格参考卡（古风爽文 / 轻喜探案 / 对白推进）](./style-library-dafeng.md)
+- [第一序列风格参考卡（末世废土 / 黑色幽默 / 人性群像）](./style-library-diyixulie.md)
+- [凡人修仙传风格参考卡（凡人流 / 克制升级 / 功利现实）](./style-library-fanren.md)
+- [网文章尾 Hook 专项卡（悬念制造 / 事件中断 / 判断翻转）](./style-library-webnovel-hooking.md)
+- [网文信息解释控制专项卡（去讲义味 / 分层揭露 / 场景替代说明）](./style-library-webnovel-exposition-control.md)
 
 ## 说明
 
