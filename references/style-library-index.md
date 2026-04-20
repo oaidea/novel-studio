@@ -16,6 +16,7 @@
 - [凡人修仙传风格参考卡（凡人流 / 克制升级 / 功利现实）](./style-library-fanren.md)
 - [网文章尾 Hook 专项卡（悬念制造 / 事件中断 / 判断翻转）](./style-library-webnovel-hooking.md)
 - [网文信息解释控制专项卡（去讲义味 / 分层揭露 / 场景替代说明）](./style-library-webnovel-exposition-control.md)
+- [去AI味写作综合指南（规则+黑名单+改稿流程+提示词模板）](./humanize-style-guide.md)
 
 ## 说明
 
