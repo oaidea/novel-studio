@@ -60,14 +60,16 @@ It is not a black-box tool that “writes the whole novel for you”. It is a st
 
 ---
 
-## v0.6.9 Highlights / v0.6.9 更新亮点
+## v0.7.0 Highlights / v0.7.0 更新亮点
 
 Highlights / 亮点：
-- **Chapter Dependency Graph / 章节依赖图谱**：`build_chapter_deps.py` 自动从 packet/summary/章节文本中提取九种依赖关系（foreshadow、callback、character-intro、space-return 等），维护 `chapter-deps.json`，防止伏笔断线
-- **Packet-First Writing**：chapter packet、summary-first、对象状态摘要、最小输入包
-- **Workflow Orchestration**：startup / style-full / chapter-full / humanize / deps / deps-all / refresh / writeback / full 模式
-- **Input Pack Tiers**：模型极简版 / 模型标准版 / 人工审阅版输入包
-- **Humanize / 去AI味 naming unified**：内部能力名统一为 `humanize`，用户侧中文统一说“去AI味”
+- **Humanize 写作综合指南**：`references/humanize-style-guide.md` 整合了完整的去AI味规则体系、AI味句式黑名单（5类）、改稿流程（6步+极简四连）、6+1版本提示词模板，可直接给模型调用
+- **网文风格库扩展**：新增6张风格卡（诡秘之主、大奉打更人、第一序列、凡人修仙传、章尾Hook、信息解释控制），覆盖作品级+技巧级风格
+- **派/帮/教/宗/门组织命名规则卡**：`references/faction-naming-guide.md` 提供完整的江湖/仙侠势力命名框架与判定口诀
+- **章节依赖图谱**：`build_chapter_deps.py` 自动维护 `chapter-deps.json`，防止伏笔断线（v0.6.9引入）
+- **Humanize 工作流整合**：`humanize` 能力（对外中文别名：**去AI味**）已接入 chapter-full 报告，支持 light/medium/heavy 三档，默认 medium，输出旁路稿不覆盖原章（v0.6.9引入）
+- **Packet-First 写作**：chapter packet、summary-first、对象状态摘要、最小输入包（v0.6.9引入）
+- **风格库模式**：可调用已沉淀的风格参考卡，生成可执行风格约束与提示词模板（v0.6.9引入）
 
 ---
 
@@ -117,5 +119,5 @@ This is probably overkill for:
 
 ## Current Version / 当前版本
 
-- **v0.6.9**
+- **v0.7.0**
 - Repository / 仓库：<https://github.com/oaidea/novel-studio>

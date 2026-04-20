@@ -1,8 +1,4 @@
 ---
-name: novel-studio
-version: 0.6.9
-description: 统一小说创作总技能，已升级为面向长篇项目治理、packet-first 单章写作、项目级母风格建模、章节启动工作流、章节依赖图谱与低 token 上下文装载的创作工作台。
----
 
 # Novel Studio
 
@@ -629,7 +625,8 @@ novels/<项目名>/
 - `references/project-init-template.md`：项目初始化模板
 - `references/chapter-review-template.md`：章节审核报告模板
 - `references/chapter-summary-template.md`：章节元数据 / summary 模板
-- `references/humanize-checklist.md`：去 AI 味检查清单（内部能力名：`humanize`，用户侧中文别名：**去AI味**）
+- `references/humanize-style-guide.md`：去AI味写作综合指南（规则+黑名单+改稿流程+提示词模板）
+- `references/faction-naming-guide.md`：派/帮/教/宗/门组织命名规则卡
 - `references/writing-study-plan.md`：写作学习计划与训练模式参考
 - `references/style-library-index.md`：风格库索引
 - `references/style-library-santi.md`：三体风格参考卡
