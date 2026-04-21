@@ -60,9 +60,10 @@ It is not a black-box tool that “writes the whole novel for you”. It is a st
 
 ---
 
-## v0.7.0 Highlights / v0.7.0 更新亮点
+## v0.8.0 Highlights / v0.8.0 更新亮点
 
 Highlights / 亮点：
+- **人物命名指南与命名库**：新增 `references/character-naming-guide.md`（人物命名方法论，覆盖仙侠/古代/民国/都市/农村5类题材+少数民族+外国人，共7类命名规范）和 `references/character-naming-library.md`（按题材×时代×社会环境×家庭审美分层的名字参考池）；都市/农村题材再细分50/60、70/80、90/00、10/20四个代际
 - **Humanize 写作综合指南**：`references/humanize-style-guide.md` 整合了完整的去AI味规则体系、AI味句式黑名单（5类）、改稿流程（6步+极简四连）、6+1版本提示词模板，可直接给模型调用
 - **网文风格库扩展**：新增6张风格卡（诡秘之主、大奉打更人、第一序列、凡人修仙传、章尾Hook、信息解释控制），覆盖作品级+技巧级风格
 - **派/帮/教/宗/门组织命名规则卡**：`references/faction-naming-guide.md` 提供完整的江湖/仙侠势力命名框架与判定口诀
@@ -73,51 +74,21 @@ Highlights / 亮点：
 
 ---
 
-## Repository Structure / 仓库结构
+## v0.7.0 Highlights / v0.7.0 更新亮点
 
-- [`SKILL.md`](./SKILL.md) — main skill specification / 技能主说明与工作模式
-- [`references/`](./references/) — references, strategies, templates / 参考文档、策略与模板
-- [`scripts/`](./scripts/) — workflow scaffolds and utilities / 工作流脚手架与工具脚本
-- [`novel-studio.skill`](./novel-studio.skill) — distributable skill package / 可分发技能包
-- [`_meta.json`](./_meta.json) — metadata / 元信息
-
----
-
-## Best Fit / 适用场景
-
-Best for:
-
-更适合：
-
-- long-form novels and webnovels / 长篇小说与网文连载
-- projects that need stable settings, style, and object tracking / 需要长期维护设定、风格与对象状态的项目
-- writers who want low-token chapter workflows / 想建立低 token 单章创作流程的人
-- writers who want project-level style consistency / 想稳住整部作品母风格的人
+- **Humanize 写作综合指南**：`references/humanize-style-guide.md` 整合了完整的去AI味规则体系、AI味句式黑名单（5类）、改稿流程（6步+极简四连）、6+1版本提示词模板，可直接给模型调用
+- **网文风格库扩展**：新增6张风格卡（诡秘之主、大奉打更人、第一序列、凡人修仙传、章尾Hook、信息解释控制），覆盖作品级+技巧级风格
+- **派/帮/教/宗/门组织命名规则卡**：`references/faction-naming-guide.md` 提供完整的江湖/仙侠势力命名框架与判定口诀
+- **章节依赖图谱**：`build_chapter_deps.py` 自动维护 `chapter-deps.json`，防止伏笔断线（v0.6.9引入）
+- **Humanize 工作流整合**：`humanize` 能力（对外中文别名：**去AI味**）已接入 chapter-full 报告，支持 light/medium/heavy 三档，默认 medium，输出旁路稿不覆盖原章（v0.6.9引入）
+- **Packet-First 写作**：chapter packet、summary-first、对象状态摘要、最小输入包（v0.6.9引入）
+- **风格库模式**：可调用已沉淀的风格参考卡，生成可执行风格约束与提示词模板（v0.6.9引入）
 
 ---
 
-## Not the Best Fit / 不太适合的场景
+## v0.6.9 Highlights / v0.6.9 更新亮点
 
-This is probably overkill for:
-
-以下场景未必需要它：
-
-- short non-fiction copy / 非小说类短文案
-- one-off micro rewrites / 一次性极短文本改写
-- lightweight writing tasks with no project structure / 完全不需要项目管理的轻量写作
-
----
-
-## Quick Start / 快速开始
-
-1. Read [`SKILL.md`](./SKILL.md) first / 先读 `SKILL.md`
-2. Use [`references/`](./references/) to find governance, packet-first, style, and workflow docs / 从 `references/` 里查治理、packet-first、风格与工作流文档
-3. Use [`scripts/`](./scripts/) to initialize or run workflows / 用 `scripts/` 初始化项目或运行工作流
-4. Use [`novel-studio.skill`](./novel-studio.skill) for installation or distribution / 需要安装或分发时使用 `novel-studio.skill`
-
----
-
-## Current Version / 当前版本
-
-- **v0.7.0**
-- Repository / 仓库：<https://github.com/oaidea/novel-studio>
+- **章节依赖图谱**：新增 `build_chapter_deps.py`，自动维护 `chapter-deps.json`，防止伏笔断线
+- **Humanize 工作流整合**：`humanize` 能力（对外中文别名：**去AI味**）已接入 chapter-full 报告，支持 light/medium/heavy 三档，默认 medium，输出旁路稿不覆盖原章
+- **Packet-First 写作**：chapter packet、summary-first、对象状态摘要、最小输入包
+- **风格库模式**：可调用已沉淀的风格参考卡，生成可执行风格约束与提示词模板
