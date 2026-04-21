@@ -18,6 +18,12 @@
 - [网文信息解释控制专项卡（去讲义味 / 分层揭露 / 场景替代说明）](./style-library-webnovel-exposition-control.md)
 - [去AI味写作综合指南（规则+黑名单+改稿流程+提示词模板）](./humanize-style-guide.md)
 
+## 命名与命名库
+
+- [人物命名规范（命名方法论 / 分布原则 / 失真类型）](./character-naming-guide.md)
+- [人物命名库（按现实命名生态分区的参考池）](./character-naming-library.md)
+- [组织命名与势力分类规则卡（派/帮/教/宗/门）](./faction-naming-guide.md)
+
 ## 说明
 
 本目录用于沉淀可复用的小说风格拆解文档。
