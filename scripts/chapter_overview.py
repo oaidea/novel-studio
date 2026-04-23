@@ -7,6 +7,8 @@ Generate a chapter-scoped overview for Novel Studio, including:
 - clips assigned to this chapter
 - unassigned clips view when requested
 - packet / summary / objects / logs readiness
+
+Items under chapters/retired/ are intentionally excluded from active workflow views.
 """
 
 from __future__ import annotations

@@ -216,6 +216,7 @@ def main() -> int:
             project / ".novel-studio" / "indexes" / "active-scenes.md",
             project / ".novel-studio" / "indexes" / "active-clips.md",
             project / "settings" / "subsettings" / "project-style-card.md",
+            project / "chapters" / "retired",
         ]
 
         for path in expected:

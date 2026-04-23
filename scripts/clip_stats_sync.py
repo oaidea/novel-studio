@@ -9,7 +9,8 @@ Sync project-level and chapter-level clip stats into:
 This is conservative but helpful:
 - preserves unrelated fields
 - adds/updates clip-related summary fields
-- auto-creates minimal chapter-meta entries for chapters implied by files/clips
+- auto-creates minimal chapter-meta entries for chapters implied by active files/clips
+- excludes retired assets under chapters/retired/
 """
 
 from __future__ import annotations

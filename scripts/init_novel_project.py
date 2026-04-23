@@ -28,7 +28,7 @@ ANALYSIS_README = """# analysis\n\n这里放读者视角分析、章节复盘、
 
 BRAINSTORM_README = """# brainstorm\n\n这里放结构试探、线索讨论、标题试探、暂不进入正文流的发散材料。\n"""
 
-CHAPTERS_README = """# chapters\n\n这里放实际进入正文流的文本。\n\n- `published/`：已发布正式版\n- `candidates/`：待发布候选稿\n- `early-drafts/`：早期草稿\n- `drafts/`：普通写作稿\n- `revisions/`：修订稿 / 重写稿 / 过渡版\n- `clips/`：章节相关的局部片段 / Clip 资产\n"""
+CHAPTERS_README = """# chapters\n\n这里放实际进入正文流的文本。\n\n- `published/`：已发布正式版\n- `candidates/`：待发布候选稿\n- `early-drafts/`：早期草稿\n- `drafts/`：普通写作稿\n- `revisions/`：修订稿 / 重写稿 / 过渡版\n- `clips/`：章节相关的局部片段 / Clip 资产\n- `retired/`：退出创作流的旧稿 / 废稿 / 历史留档，默认不再参与任何创作判断\n"""
 
 NAV_README = """# nav\n\n这是项目的简版导航区，只做快速摘要入口，不代替正式设定。\n\n- `characters.md`：人物摘要入口\n- `outline.md`：大纲摘要入口\n- `timeline.md`：时间线摘要入口\n- `foreshadowing.md`：伏笔摘要入口\n- `state_tracking.md`：状态文件跳转入口\n"""
 
@@ -143,6 +143,8 @@ def main() -> int:
         root / "chapters" / "drafts",
         root / "chapters" / "revisions",
         root / "chapters" / "clips",
+        root / "chapters" / "retired",
+        root / "chapters" / "retired" / "clips",
         root / "docs",
         root / "nav",
         root / "settings" / "core",

@@ -145,6 +145,7 @@ def main() -> int:
         root / "chapters" / "drafts",
         root / "chapters" / "revisions",
         root / "chapters" / "clips",
+        root / "chapters" / "retired",
         root / "settings" / "subsettings" / "characters",
         root / "settings" / "subsettings" / "relationships",
         root / "settings" / "subsettings" / "timeline",
