@@ -505,7 +505,7 @@ def main() -> int:
         lines += ["", "### 推荐带（增强上下文层）", ""]
         if indexes.exists():
             added = False
-            for name in ["active-characters.md", "active-events.md", "active-spaces.md", "active-scenes.md", "pending-foreshadowing.md"]:
+            for name in ["active-characters.md", "active-events.md", "active-spaces.md", "active-scenes.md", "active-clips.md", "pending-foreshadowing.md"]:
                 idx = indexes / name
                 if idx.exists():
                     lines.append(f"- `{idx.relative_to(root)}`")

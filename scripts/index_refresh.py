@@ -7,7 +7,6 @@ Current behavior is intentionally conservative and file-system based.
 """
 
 from pathlib import Path
-import re
 import sys
 
 
@@ -30,7 +29,7 @@ def write_index(path: Path, title: str, items: list[str], fallback: str) -> None
         lines.extend([f"- {item}" for item in items])
     else:
         lines.append(f"- {fallback}")
-    path.write_text("\n".join(lines) + "\n")
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
 def main() -> int:
@@ -46,16 +45,26 @@ def main() -> int:
     event_dir = root / "settings" / "subsettings" / "events"
     space_dir = root / "settings" / "subsettings" / "spaces" / "cards"
     scene_dir = root / "settings" / "subsettings" / "scenes" / "cards"
+    clip_dir = root / "chapters" / "clips"
 
     characters = [n for n in list_markdown_names(char_dir) if n not in {"README"}]
     events = [n for n in list_markdown_names(event_dir) if n not in {"README"}]
     spaces = [n for n in list_markdown_names(space_dir) if n not in {"README"}]
     scenes = [n for n in list_markdown_names(scene_dir) if n not in {"README", "scene-index"}]
+    clips = []
+    if clip_dir.exists():
+        for path in sorted(clip_dir.glob("*.md")):
+            text = path.read_text(encoding="utf-8", errors="ignore")
+            if "type: clip" not in text:
+                continue
+            if "status: active" not in text:
+                continue
+            clips.append(path.stem)
 
     pending = []
     foreshadow_file = root / "settings" / "subsettings" / "foreshadowing" / "foreshadowing-management.md"
     if foreshadow_file.exists():
-        text = foreshadow_file.read_text()
+        text = foreshadow_file.read_text(encoding="utf-8")
         for line in text.splitlines():
             line = line.strip()
             if line.startswith("- "):
@@ -67,6 +76,7 @@ def main() -> int:
     write_index(idx_dir / "active-events.md", "active events", events, "待刷新")
     write_index(idx_dir / "active-spaces.md", "active spaces", spaces, "待刷新")
     write_index(idx_dir / "active-scenes.md", "active scenes", scenes, "待刷新")
+    write_index(idx_dir / "active-clips.md", "active clips", clips, "待刷新")
     write_index(idx_dir / "pending-foreshadowing.md", "pending foreshadowing", pending, "待刷新")
 
     print(f"refreshed indexes under: {idx_dir}")

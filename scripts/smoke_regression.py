@@ -186,7 +186,8 @@ def main() -> int:
             project / ".novel-studio" / "logs" / f"{chapter_id}-chapter-full-report-v1.md",
             project / ".novel-studio" / "logs" / f"{chapter_id}-chapter-full-report-v1.json",
             project / ".novel-studio" / "indexes" / "active-characters.md",
-            project / ".novel-studio" / "indexes" / "active-events.md",
+            project / ".novel-studio" / "indexes" / "active-scenes.md",
+            project / ".novel-studio" / "indexes" / "active-clips.md",
             project / "settings" / "subsettings" / "project-style-card.md",
         ]
 

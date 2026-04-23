@@ -30,6 +30,7 @@ STATUS_BY_DIR = {
     "early-drafts": "draft",
     "drafts": "draft",
     "revisions": "reference",
+    "clips": "clip",
 }
 
 PRIMARY_STATUS_DIRS = {"published", "candidates", "early-drafts", "drafts"}
@@ -60,19 +61,25 @@ def chapter_id_from_name(name: str) -> str | None:
 def collect_chapter_files(root: Path) -> tuple[dict[str, list[Path]], dict[str, set[str]]]:
     files_by_id: dict[str, list[Path]] = {}
     ids_by_status = {status: set() for status in set(STATUS_BY_DIR.values())}
+    clip_files: list[Path] = []
 
     for dirname, status in STATUS_BY_DIR.items():
         folder = root / "chapters" / dirname
         if not folder.exists():
             continue
-        for path in sorted(folder.glob("ch_*.md")):
+        pattern = "*.md" if dirname == "clips" else "ch_*.md"
+        for path in sorted(folder.glob(pattern)):
+            if dirname == "clips":
+                clip_files.append(path)
+                ids_by_status.setdefault(status, set()).add(path.stem)
+                continue
             cid = chapter_id_from_name(path.name)
             if not cid:
                 continue
             files_by_id.setdefault(cid, []).append(path)
             ids_by_status.setdefault(status, set()).add(cid)
 
-    return files_by_id, ids_by_status
+    return files_by_id, ids_by_status, clip_files
 
 
 def main() -> int:
@@ -104,7 +111,7 @@ def main() -> int:
             print(f"- {item}")
         return 2
 
-    files_by_id, ids_by_status = collect_chapter_files(root)
+    files_by_id, ids_by_status, clip_files = collect_chapter_files(root)
     chapter_ids_from_files = set(files_by_id)
 
     chapters = meta.get("chapters")
@@ -182,6 +189,8 @@ def main() -> int:
                 for cid, paths in files_by_id.items()
                 if any(p.parent.name == "revisions" for p in paths) and cid not in ids_by_status.get("published", set()) and cid not in ids_by_status.get("candidate", set()) and cid not in ids_by_status.get("draft", set())
             }),
+            "clips_total": len(clip_files),
+            "clips_active": len([p for p in clip_files if 'status: active' in p.read_text(encoding='utf-8', errors='ignore')]),
         }
         for key, actual in actual_counts.items():
             if key in summary_block and summary_block.get(key) != actual:
@@ -204,6 +213,8 @@ def main() -> int:
     # 7) Notes
     if chapter_ids_from_files:
         notes.append(f"chapter files detected: {len(chapter_ids_from_files)}")
+    if clip_files:
+        notes.append(f"clip files detected: {len(clip_files)}")
     if chapter_ids_from_meta:
         notes.append(f"chapter-meta entries detected: {len(chapter_ids_from_meta)}")
 

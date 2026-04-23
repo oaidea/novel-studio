@@ -144,6 +144,7 @@ def main() -> int:
         root / "chapters" / "early-drafts",
         root / "chapters" / "drafts",
         root / "chapters" / "revisions",
+        root / "chapters" / "clips",
         root / "settings" / "subsettings" / "characters",
         root / "settings" / "subsettings" / "relationships",
         root / "settings" / "subsettings" / "timeline",
@@ -181,6 +182,7 @@ def main() -> int:
         root / ".novel-studio" / "indexes" / "active-events.md",
         root / ".novel-studio" / "indexes" / "active-spaces.md",
         root / ".novel-studio" / "indexes" / "active-scenes.md",
+        root / ".novel-studio" / "indexes" / "active-clips.md",
         root / ".novel-studio" / "indexes" / "pending-foreshadowing.md",
     ]
 

@@ -32,7 +32,7 @@ def main() -> int:
 
     core_min = [summary, packet, style_overlay]
     core_std = [summary, packet, style_overlay, object_summary]
-    index_names = ["active-characters.md", "active-events.md", "active-spaces.md", "active-scenes.md", "pending-foreshadowing.md"]
+    index_names = ["active-characters.md", "active-events.md", "active-spaces.md", "active-scenes.md", "active-clips.md", "pending-foreshadowing.md"]
     existing_indexes = [indexes / n for n in index_names if (indexes / n).exists()]
 
     min_lines = [f"# {chapter_id} 模型输入包（极简）", "", "## 核心输入", ""]

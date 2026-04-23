@@ -28,7 +28,7 @@ ANALYSIS_README = """# analysis\n\n这里放读者视角分析、章节复盘、
 
 BRAINSTORM_README = """# brainstorm\n\n这里放结构试探、线索讨论、标题试探、暂不进入正文流的发散材料。\n"""
 
-CHAPTERS_README = """# chapters\n\n这里放实际进入正文流的文本。\n\n- `published/`：已发布正式版\n- `candidates/`：待发布候选稿\n- `early-drafts/`：早期草稿\n- `drafts/`：普通写作稿\n- `revisions/`：修订稿 / 重写稿 / 过渡版\n"""
+CHAPTERS_README = """# chapters\n\n这里放实际进入正文流的文本。\n\n- `published/`：已发布正式版\n- `candidates/`：待发布候选稿\n- `early-drafts/`：早期草稿\n- `drafts/`：普通写作稿\n- `revisions/`：修订稿 / 重写稿 / 过渡版\n- `clips/`：章节相关的局部片段 / Clip 资产\n"""
 
 NAV_README = """# nav\n\n这是项目的简版导航区，只做快速摘要入口，不代替正式设定。\n\n- `characters.md`：人物摘要入口\n- `outline.md`：大纲摘要入口\n- `timeline.md`：时间线摘要入口\n- `foreshadowing.md`：伏笔摘要入口\n- `state_tracking.md`：状态文件跳转入口\n"""
 
@@ -72,7 +72,7 @@ CHAPTER_PROGRESS = """# 章节进度记录\n\n## 当前章节状态\n- ch_001：
 
 OUTLINE_NEXT_CHAPTERS = """# 近章规划\n\n## 当前近章目标\n- \n\n## 承接点\n- \n\n## 近期风险\n- \n"""
 
-NOVEL_STUDIO_README = """# .novel-studio\n\n这是项目的结构化工作内核，存放：\n- 项目状态\n- 章节元数据\n- chapter summary\n- chapter packet\n- active indexes\n- workflow logs\n"""
+NOVEL_STUDIO_README = """# .novel-studio\n\n这是项目的结构化工作内核，存放：\n- 项目状态\n- 章节元数据\n- chapter summary\n- chapter packet\n- active indexes\n- workflow logs\n- clip indexes / Clip 资产索引\n"""
 
 ACTIVE_INDEX_PLACEHOLDER = """# {title}\n\n- 暂无\n"""
 
@@ -142,6 +142,7 @@ def main() -> int:
         root / "chapters" / "early-drafts",
         root / "chapters" / "drafts",
         root / "chapters" / "revisions",
+        root / "chapters" / "clips",
         root / "docs",
         root / "nav",
         root / "settings" / "core",
@@ -204,6 +205,7 @@ def main() -> int:
     ensure_file(root / ".novel-studio" / "indexes" / "active-events.md", ACTIVE_INDEX_PLACEHOLDER.format(title="当前活跃事件"))
     ensure_file(root / ".novel-studio" / "indexes" / "active-spaces.md", ACTIVE_INDEX_PLACEHOLDER.format(title="当前活跃空间"))
     ensure_file(root / ".novel-studio" / "indexes" / "active-scenes.md", ACTIVE_INDEX_PLACEHOLDER.format(title="当前活跃场景"))
+    ensure_file(root / ".novel-studio" / "indexes" / "active-clips.md", ACTIVE_INDEX_PLACEHOLDER.format(title="当前活跃片段 / Clips"))
     ensure_file(root / ".novel-studio" / "indexes" / "pending-foreshadowing.md", ACTIVE_INDEX_PLACEHOLDER.format(title="当前待回收伏笔"))
 
     state = dict(STATE_TEMPLATE)
