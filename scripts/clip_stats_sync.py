@@ -6,9 +6,10 @@ Sync project-level and chapter-level clip stats into:
 - .novel-studio/state.json
 - .novel-studio/chapter-meta.json
 
-This is conservative and additive:
+This is conservative but helpful:
 - preserves unrelated fields
 - adds/updates clip-related summary fields
+- auto-creates minimal chapter-meta entries for chapters implied by files/clips
 """
 
 from __future__ import annotations
@@ -16,6 +17,14 @@ from __future__ import annotations
 from pathlib import Path
 import json
 import sys
+
+STATUS_BY_DIR = {
+    "published": "published",
+    "candidates": "candidate",
+    "early-drafts": "draft",
+    "drafts": "draft",
+    "revisions": "reference",
+}
 
 
 def load_json(path: Path, fallback):
@@ -79,6 +88,54 @@ def collect_clips(root: Path) -> list[dict]:
     return items
 
 
+def collect_chapter_file_statuses(root: Path) -> dict[str, str]:
+    out: dict[str, str] = {}
+    for dirname, status in STATUS_BY_DIR.items():
+        folder = root / "chapters" / dirname
+        if not folder.exists():
+            continue
+        for path in sorted(folder.glob("ch_*.md")):
+            cid = path.name.split("-")[0]
+            out.setdefault(cid, status)
+    return out
+
+
+def chapter_status_counts(chapter_statuses: dict[str, str]) -> dict[str, int]:
+    return {
+        "chapters_published": len([x for x in chapter_statuses.values() if x == "published"]),
+        "chapters_candidate": len([x for x in chapter_statuses.values() if x == "candidate"]),
+        "chapters_draft": len([x for x in chapter_statuses.values() if x == "draft"]),
+        "chapters_reference_only": len([x for x in chapter_statuses.values() if x == "reference"]),
+    }
+
+
+def ensure_meta_entry(chapters: list[dict], chapter_id: str, status: str) -> dict:
+    for item in chapters:
+        if isinstance(item, dict) and item.get("id") == chapter_id:
+            if not item.get("status"):
+                item["status"] = status
+            return item
+    item = {
+        "id": chapter_id,
+        "title": chapter_id,
+        "status": status,
+        "summary": "",
+        "hasPacket": False,
+        "hasSummary": False,
+        "cardsUpdated": False,
+        "timeAnchor": "",
+        "clipStats": {
+            "total": 0,
+            "active": 0,
+            "merged": 0,
+            "archived": 0,
+            "discarded": 0,
+        },
+    }
+    chapters.append(item)
+    return item
+
+
 def main() -> int:
     if len(sys.argv) < 2:
         print("usage: clip_stats_sync.py <project-dir>")
@@ -90,6 +147,7 @@ def main() -> int:
     state = load_json(state_path, {})
     meta = load_json(meta_path, {"chapters": []})
     clips = collect_clips(root)
+    chapter_statuses = collect_chapter_file_statuses(root)
 
     project_stats = {
         "clips_total": len(clips),
@@ -101,34 +159,40 @@ def main() -> int:
     }
 
     summary = state.get("summary") if isinstance(state.get("summary"), dict) else {}
+    summary.update(chapter_status_counts(chapter_statuses))
     summary.update(project_stats)
     state["summary"] = summary
 
     chapters = meta.get("chapters") if isinstance(meta.get("chapters"), list) else []
-    by_chapter = {}
+    by_chapter: dict[str, list[dict]] = {}
+    chapter_ids = set(chapter_statuses)
     for item in clips:
         ch = item.get("chapter")
         if not ch or ch == "unassigned":
             continue
         by_chapter.setdefault(ch, []).append(item)
+        chapter_ids.add(ch)
 
-    for chapter in chapters:
-        if not isinstance(chapter, dict):
-            continue
-        cid = chapter.get("id")
+    for cid in sorted(chapter_ids):
+        entry = ensure_meta_entry(chapters, cid, chapter_statuses.get(cid, "draft"))
         items = by_chapter.get(cid, [])
-        chapter["clipStats"] = {
+        entry["clipStats"] = {
             "total": len(items),
             "active": len([x for x in items if x.get("status") == "active"]),
             "merged": len([x for x in items if x.get("status") == "merged"]),
             "archived": len([x for x in items if x.get("status") == "archived"]),
             "discarded": len([x for x in items if x.get("status") == "discarded"]),
         }
+        entry["hasPacket"] = (root / ".novel-studio" / "packets" / f"{cid}-packet.md").exists()
+        entry["hasSummary"] = (root / ".novel-studio" / "summaries" / f"{cid}-summary.md").exists()
+
+    meta["chapters"] = sorted(chapters, key=lambda x: x.get("id", ""))
 
     save_json(state_path, state)
     save_json(meta_path, meta)
     print(f"synced clip stats into: {state_path}")
     print(f"synced clip stats into: {meta_path}")
+    print(f"chapter-meta entries now: {len(meta['chapters'])}")
     return 0
 
 

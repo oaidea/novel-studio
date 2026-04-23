@@ -29,6 +29,13 @@
       "hasSummary": false,
       "cardsUpdated": false,
       "timeAnchor": "该章时间锚点",
+      "clipStats": {
+        "total": 0,
+        "active": 0,
+        "merged": 0,
+        "archived": 0,
+        "discarded": 0
+      },
       "strand": {
         "quest": 0,
         "fire": 0,
@@ -60,6 +67,7 @@
 - `hasSummary`：是否已生成 chapter summary
 - `cardsUpdated`：相关对象卡 / 变化记录是否已回写
 - `timeAnchor`：该章时间锚点
+- `clipStats`：该章片段统计，推荐包含 `total / active / merged / archived / discarded`
 
 ### 主线平衡字段
 - `strand.quest`：剧情主线推进强度

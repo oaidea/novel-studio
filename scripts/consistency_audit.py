@@ -177,6 +177,26 @@ def main() -> int:
         if has_summary_meta is not None and has_summary_meta != summary.exists():
             warnings.append(f"hasSummary mismatch for {cid}: meta={has_summary_meta}, file_exists={summary.exists()}")
 
+    # 3b) clipStats alignment
+    for cid, item in sorted(meta_by_id.items()):
+        clip_stats = item.get("clipStats")
+        chapter_clip_files = []
+        for path in clip_files:
+            text = path.read_text(encoding="utf-8", errors="ignore")
+            if f"chapter: {cid}" in text:
+                chapter_clip_files.append(path)
+        actual_clip_stats = {
+            "total": len(chapter_clip_files),
+            "active": len([p for p in chapter_clip_files if "status: active" in p.read_text(encoding="utf-8", errors="ignore")]),
+            "merged": len([p for p in chapter_clip_files if "status: merged" in p.read_text(encoding="utf-8", errors="ignore")]),
+            "archived": len([p for p in chapter_clip_files if "status: archived" in p.read_text(encoding="utf-8", errors="ignore")]),
+            "discarded": len([p for p in chapter_clip_files if "status: discarded" in p.read_text(encoding="utf-8", errors="ignore")]),
+        }
+        if clip_stats is None:
+            warnings.append(f"chapter-meta entry missing clipStats: {cid}")
+        elif clip_stats != actual_clip_stats:
+            warnings.append(f"clipStats mismatch for {cid}: meta={clip_stats}, actual={actual_clip_stats}")
+
     # 4) state.summary counters vs actual file distribution
     summary_block = state.get("summary") if isinstance(state, dict) else None
     if isinstance(summary_block, dict):
@@ -191,6 +211,10 @@ def main() -> int:
             }),
             "clips_total": len(clip_files),
             "clips_active": len([p for p in clip_files if 'status: active' in p.read_text(encoding='utf-8', errors='ignore')]),
+            "clips_merged": len([p for p in clip_files if 'status: merged' in p.read_text(encoding='utf-8', errors='ignore')]),
+            "clips_archived": len([p for p in clip_files if 'status: archived' in p.read_text(encoding='utf-8', errors='ignore')]),
+            "clips_discarded": len([p for p in clip_files if 'status: discarded' in p.read_text(encoding='utf-8', errors='ignore')]),
+            "clips_unassigned": len([p for p in clip_files if 'chapter: unassigned' in p.read_text(encoding='utf-8', errors='ignore')]),
         }
         for key, actual in actual_counts.items():
             if key in summary_block and summary_block.get(key) != actual:

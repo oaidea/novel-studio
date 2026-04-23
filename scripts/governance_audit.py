@@ -249,6 +249,8 @@ def main() -> int:
             for key in ["title", "status", "summary"]:
                 if key not in item:
                     warnings.append(f"chapter-meta entry {cid} missing recommended field: {key}")
+            if "clipStats" not in item:
+                warnings.append(f"chapter-meta entry {cid} missing recommended field: clipStats")
 
         chapter_files = []
         for folder in [

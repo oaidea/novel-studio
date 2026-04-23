@@ -112,6 +112,13 @@ def seed_minimal_content(project: Path) -> None:
                         "hasSummary": False,
                         "cardsUpdated": False,
                         "timeAnchor": "雨夜",
+                        "clipStats": {
+                            "total": 0,
+                            "active": 0,
+                            "merged": 0,
+                            "archived": 0,
+                            "discarded": 0
+                        },
                         "strand": {"quest": 1, "fire": 0, "constellation": 0},
                     }
                 ]
@@ -185,6 +192,7 @@ def main() -> int:
         customize_packet(project, chapter_id)
         run(str(SCRIPTS / "workflow_runner.py"), str(project), chapter_id, "chapter-full", project.name)
         run(str(SCRIPTS / "workflow_runner.py"), str(project), chapter_id, "overview")
+        run(str(SCRIPTS / "workflow_runner.py"), str(project), chapter_id, "clip-stats-sync")
 
         expected = [
             project / "README.md",
@@ -212,6 +220,15 @@ def main() -> int:
 
         for path in expected:
             assert_exists(path)
+
+        meta = json.loads((project / ".novel-studio" / "chapter-meta.json").read_text(encoding="utf-8"))
+        if not meta.get("chapters"):
+            raise AssertionError("chapter-meta should have at least one chapter entry after clip stats sync")
+        first = next((x for x in meta["chapters"] if x.get("id") == chapter_id), None)
+        if not first:
+            raise AssertionError(f"chapter-meta missing entry for {chapter_id}")
+        if "clipStats" not in first:
+            raise AssertionError(f"chapter-meta entry for {chapter_id} missing clipStats")
 
         print("\nSmoke regression passed.")
         print(f"Fixture project path (temporary): {project}")

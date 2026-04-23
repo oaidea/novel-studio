@@ -382,6 +382,7 @@ def main() -> int:
             run_py(SCRIPT_DIR / "index_refresh.py", str(root))
         run_py(SCRIPT_DIR / "build_input_pack.py", str(root), chapter_id)
         run_py(SCRIPT_DIR / "chapter_overview.py", str(root), chapter_id)
+        run_py(SCRIPT_DIR / "clip_stats_sync.py", str(root))
 
         version_num = next_report_version(logs_dir, chapter_id)
         version_tag = f"v{version_num}"

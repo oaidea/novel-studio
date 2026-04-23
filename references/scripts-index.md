@@ -18,6 +18,7 @@
 - `scripts/chapter_overview.py`：生成单章 overview，汇总 chapter files + clips + packet-first 产物
 - `scripts/clip_overview.py`：生成项目级 Clip 总览（当前支持 `unassigned / all`）
 - `scripts/clip_stats_sync.py`：把 Clip 统计回写进 `state.json` 与 `chapter-meta.json`
+- `workflow_runner.py ... chapter-full` 当前会自动触发 chapter overview + clip stats sync
 
 当前状态：
 - 已提供第一版 scaffold / 轻量实用工具混合层
