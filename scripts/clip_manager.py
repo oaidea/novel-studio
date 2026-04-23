@@ -5,7 +5,7 @@ clip_manager.py
 Minimal Clip manager for Novel Studio MVP.
 Supports:
 - create: create a clip under chapters/clips/
-- list: list clips with basic filters
+- list: list clips with filters
 - show: show a clip's parsed metadata and content path
 - update: update clip metadata/content
 - status: controlled status transition
@@ -53,7 +53,6 @@ def slugify(text: str) -> str:
     text = re.sub(r"-+", "-", text).strip("-")
     if not text:
         return f"clip-{datetime.now().strftime('%Y%m%d%H%M%S')}"
-    # Prefer ascii-only filenames when possible.
     ascii_text = re.sub(r"[^a-z0-9-]", "", text).strip("-")
     if ascii_text:
         return ascii_text
@@ -196,11 +195,15 @@ def cmd_create(root: Path, argv: list[str]) -> int:
 def cmd_list(root: Path, argv: list[str]) -> int:
     chapter = argv[0] if len(argv) >= 1 and argv[0] else None
     status = argv[1] if len(argv) >= 2 and argv[1] else None
+    tag = argv[2] if len(argv) >= 3 and argv[2] else None
     items = []
     for path, data, _ in iter_clips(root):
         if chapter and data.get("chapter") != chapter:
             continue
         if status and data.get("status") != status:
+            continue
+        tags = data.get("tags") or []
+        if tag and tag not in tags:
             continue
         items.append({
             "title": data.get("title"),
@@ -208,7 +211,8 @@ def cmd_list(root: Path, argv: list[str]) -> int:
             "chapter": data.get("chapter"),
             "status": data.get("status"),
             "updated_at": data.get("updated_at"),
-            "tags": data.get("tags") or [],
+            "tags": tags,
+            "merged_into": data.get("merged_into"),
             "path": str(path.relative_to(root)),
         })
     print(json.dumps(items, ensure_ascii=False, indent=2))

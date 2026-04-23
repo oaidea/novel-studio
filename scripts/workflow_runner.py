@@ -430,20 +430,39 @@ def main() -> int:
         lines += ["", "## 本章片段 / Clips", ""]
         overview_json = logs_dir / f"{chapter_id}-chapter-overview.json"
         clips = []
+        clip_stats = None
+        unassigned_preview = []
         if overview_json.exists():
             try:
                 overview_data = json.loads(overview_json.read_text(encoding="utf-8"))
                 clips = overview_data.get("clips", [])
+                clip_stats = overview_data.get("clipStats")
+                unassigned_preview = overview_data.get("unassignedClipsPreview", [])
             except Exception:
                 clips = []
+        if clip_stats:
+            lines.append(f"- total={clip_stats.get('total', 0)}, active={clip_stats.get('active', 0)}, merged={clip_stats.get('merged', 0)}, archived={clip_stats.get('archived', 0)}, discarded={clip_stats.get('discarded', 0)}")
         if clips:
             for item in clips:
-                lines.append(f"- {item.get('title', item.get('slug', 'clip'))} (`{item.get('slug', '')}`) — status={item.get('status', '')}")
+                line = f"- {item.get('title', item.get('slug', 'clip'))} (`{item.get('slug', '')}`) — status={item.get('status', '')}"
+                if item.get("status") == "merged" and item.get("merged_into"):
+                    line += f", merged_into={item['merged_into']}"
+                lines.append(line)
                 if item.get("tags"):
                     lines.append(f"  - tags: {', '.join(item['tags'])}")
                 lines.append(f"  - path: `{item.get('path', '')}`")
         else:
             lines.append("- 当前本章无已归属 clips")
+
+        lines += ["", "## 未归属片段预览", ""]
+        if unassigned_preview:
+            for item in unassigned_preview:
+                lines.append(f"- {item.get('title', item.get('slug', 'clip'))} (`{item.get('slug', '')}`) — status={item.get('status', '')}")
+                if item.get("tags"):
+                    lines.append(f"  - tags: {', '.join(item['tags'])}")
+                lines.append(f"  - path: `{item.get('path', '')}`")
+        else:
+            lines.append("- 当前无未归属片段预览")
 
         lines += ["", "## 本章工作流路由", ""]
         lines.append(f"**路线：`{route_label}`**")

@@ -5,7 +5,7 @@ chapter_overview.py
 Generate a chapter-scoped overview for Novel Studio, including:
 - published / candidates / early-drafts / drafts / revisions
 - clips assigned to this chapter
-- unassigned clips (optional only in all/project view, not here)
+- unassigned clips view when requested
 - packet / summary / objects / logs readiness
 """
 
@@ -54,7 +54,7 @@ def chapter_files(root: Path, chapter_id: str) -> dict[str, list[str]]:
     return out
 
 
-def chapter_clips(root: Path, chapter_id: str) -> list[dict]:
+def collect_clips(root: Path) -> list[dict]:
     folder = root / "chapters" / "clips"
     items: list[dict] = []
     if not folder.exists():
@@ -63,14 +63,14 @@ def chapter_clips(root: Path, chapter_id: str) -> list[dict]:
         data, _ = parse_frontmatter(path.read_text(encoding="utf-8", errors="ignore"))
         if data.get("type") != "clip":
             continue
-        if data.get("chapter") != chapter_id:
-            continue
         items.append({
             "title": data.get("title") or path.stem,
             "slug": path.stem,
+            "chapter": data.get("chapter") or "unassigned",
             "status": data.get("status") or "active",
             "updated_at": data.get("updated_at"),
             "tags": data.get("tags") or [],
+            "merged_into": data.get("merged_into"),
             "path": str(path.relative_to(root)),
         })
     items.sort(key=lambda x: x.get("updated_at") or "", reverse=True)
@@ -79,17 +79,30 @@ def chapter_clips(root: Path, chapter_id: str) -> list[dict]:
 
 def build_overview(root: Path, chapter_id: str) -> tuple[dict, str]:
     files = chapter_files(root, chapter_id)
-    clips = chapter_clips(root, chapter_id)
+    all_clips = collect_clips(root)
+    clips = [item for item in all_clips if item.get("chapter") == chapter_id]
+    unassigned = [item for item in all_clips if item.get("chapter") == "unassigned"]
     summary = root / ".novel-studio" / "summaries" / f"{chapter_id}-summary.md"
     objects = root / ".novel-studio" / "summaries" / f"{chapter_id}-objects.md"
     packet = root / ".novel-studio" / "packets" / f"{chapter_id}-packet.md"
     style_overlay = root / ".novel-studio" / "packets" / f"{chapter_id}-style-overlay.md"
     writeback = root / ".novel-studio" / "logs" / f"{chapter_id}-writeback-checklist.md"
 
+    clip_stats = {
+        "total": len(clips),
+        "active": len([x for x in clips if x.get("status") == "active"]),
+        "merged": len([x for x in clips if x.get("status") == "merged"]),
+        "archived": len([x for x in clips if x.get("status") == "archived"]),
+        "discarded": len([x for x in clips if x.get("status") == "discarded"]),
+        "unassigned_total": len(unassigned),
+    }
+
     data = {
         "chapter": chapter_id,
         "chapterFiles": files,
         "clips": clips,
+        "clipStats": clip_stats,
+        "unassignedClipsPreview": unassigned[:10],
         "artifacts": {
             "summary": str(summary.relative_to(root)) if summary.exists() else None,
             "objects": str(objects.relative_to(root)) if objects.exists() else None,
@@ -109,10 +122,31 @@ def build_overview(root: Path, chapter_id: str) -> tuple[dict, str]:
             lines.append("- None")
         lines.append("")
 
-    lines += ["## Clips", ""]
+    lines += ["## Clip Stats", ""]
+    lines.append(f"- total: {clip_stats['total']}")
+    lines.append(f"- active: {clip_stats['active']}")
+    lines.append(f"- merged: {clip_stats['merged']}")
+    lines.append(f"- archived: {clip_stats['archived']}")
+    lines.append(f"- discarded: {clip_stats['discarded']}")
+    lines.append(f"- unassigned_total(project): {clip_stats['unassigned_total']}")
+
+    lines += ["", "## Clips", ""]
     if clips:
         for item in clips:
-            lines.append(f"- {item['title']} (`{item['slug']}`) — status={item['status']}, updated_at={item.get('updated_at') or ''}")
+            line = f"- {item['title']} (`{item['slug']}`) — status={item['status']}, updated_at={item.get('updated_at') or ''}"
+            if item.get("status") == "merged" and item.get("merged_into"):
+                line += f", merged_into={item['merged_into']}"
+            lines.append(line)
+            if item.get("tags"):
+                lines.append(f"  - tags: {', '.join(item['tags'])}")
+            lines.append(f"  - path: `{item['path']}`")
+    else:
+        lines.append("- None")
+
+    lines += ["", "## Unassigned Clips Preview", ""]
+    if unassigned:
+        for item in unassigned[:10]:
+            lines.append(f"- {item['title']} (`{item['slug']}`) — status={item['status']}")
             if item.get("tags"):
                 lines.append(f"  - tags: {', '.join(item['tags'])}")
             lines.append(f"  - path: `{item['path']}`")
