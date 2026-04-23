@@ -72,19 +72,27 @@ novels/<项目名>/
 ├── docs/
 │   └── project-notes.md     # 工作入口
 ├── analysis/                # 读者视角分析、阶段复盘
-├── chapters/                # 实际创作文本（published/drafts/candidates）
+├── chapters/                # 实际创作文本
+│   ├── published/           # 已发布正文
+│   ├── candidates/          # 待发布候选稿
+│   ├── early-drafts/        # 早期草稿
+│   ├── drafts/              # 普通写作稿
+│   └── revisions/           # 修订稿 / 重写稿 / 过渡版
 ├── brainstorm/              # 发散讨论、结构试探、未进正文流材料
 ├── nav/                     # 快速摘要入口
 ├── settings/
 │   ├── core/                # 总设定 / 总纲 / 上位真相
 │   ├── world/               # 世界规则 / 长线边界
 │   └── subsettings/
+│       ├── project-style-card.md   # 项目母风格卡
 │       ├── characters/      # 人物卡 / 人物变化记录 / 模板
 │       ├── relationships/   # 关系线
 │       ├── timeline/        # 时间线
 │       ├── foreshadowing/   # 伏笔
 │       ├── spaces/          # 空间卡 / 空间变化记录 / 模板
-│       └── scenes/          # 场景卡 / 场景变化记录 / 模板
+│       ├── scenes/          # 场景卡 / 场景变化记录 / 模板
+│       ├── events/          # 事件卡 / 事件变化逻辑
+│       └── items/           # 关键物件卡 / 物件变化记录
 ├── workflow/                # 推进计划、章节进度、设计稿
 └── .novel-studio/
     ├── state.json
@@ -99,13 +107,19 @@ novels/<项目名>/
 
 如果用户不想建全套目录，至少保证：
 
+- `README.md`
 - `docs/project-notes.md`
 - `chapters/`
+- `brainstorm/`
+- `nav/`
 - `settings/core/`
+- `settings/world/`
 - `settings/subsettings/characters/`
 - `settings/subsettings/timeline/`
+- `settings/subsettings/foreshadowing/`
 - `workflow/`
 - `.novel-studio/state.json`
+- `.novel-studio/chapter-meta.json`
 
 ---
 
@@ -205,11 +219,17 @@ novels/<项目名>/
 
 若项目较完整，优先读取：
 
-- `07-章节大纲.md`
-- `08-时间线.md`
-- `11-状态追踪.md`
-- `03-角色档案.md`
-- 上一章正文或摘要
+- `.novel-studio/packets/ch_XXXX-packet.md`
+- `.novel-studio/summaries/ch_XXXX-summary.md`
+- `.novel-studio/indexes/active-characters.md`
+- `.novel-studio/indexes/active-events.md`
+- `.novel-studio/indexes/active-spaces.md`
+- `.novel-studio/indexes/active-scenes.md`
+- `.novel-studio/indexes/pending-foreshadowing.md`
+- `workflow/chapter-progress.md`
+- `settings/subsettings/characters/`
+- `settings/subsettings/timeline/`
+- 必要时再回读上一章正文
 
 ### 阶段2：写作任务书
 
@@ -263,15 +283,15 @@ novels/<项目名>/
 
 如果用户要求维护项目文件，则同步更新：
 
-- `11-状态追踪.md`
-- `10-伏笔与回收.md`
-- `12-当前进度.md`
+- `workflow/chapter-progress.md`
+- `settings/subsettings/foreshadowing/`
 - `.novel-studio/state.json`
 - `.novel-studio/chapter-meta.json`
-- `.novel-studio/summaries/ch_XXXX.md`
-- 若采用 packet-first 策略，再同步更新该章 `chapter packet`
+- `.novel-studio/summaries/ch_XXXX-summary.md`
+- `.novel-studio/packets/ch_XXXX-packet.md`（若采用 packet-first 策略）
+- `.novel-studio/indexes/`（若项目已进入结构化维护）
 - 若本章推进了关键事件，再同步更新事件卡 / 事件变化记录
-- 若项目已进入结构化维护，再同步更新 `.novel-studio/indexes/` 中的活动索引
+- 若本章推进了关键物件状态，再同步更新物件卡 / 物件变化记录
 
 ---
 
@@ -307,7 +327,7 @@ novels/<项目名>/
 2. **设定分层**
    - `settings/core/`：总设定 / 上位真相 / 总纲
    - `settings/world/`：规则层 / 长线边界
-   - `settings/subsettings/`：人物、关系、时间线、伏笔、空间、场景等子设定
+   - `settings/subsettings/`：人物、关系、时间线、伏笔、空间、场景、事件、物件等子设定
 
 3. **创作流分离**
    - `chapters/`：实际创作文本
@@ -322,6 +342,8 @@ novels/<项目名>/
    - 人物
    - 空间
    - 场景
+   - 事件
+   - 物件
 
 5. **命名规范**
    - 文件名写“对象是什么”，状态写在目录层，不写在文件名里
@@ -379,7 +401,7 @@ novels/<项目名>/
 - `scripts/writeback_sync.py`：为章节回写生成 checklist scaffold
 - `scripts/index_refresh.py`：初始化 / 刷新活动索引 scaffold
 - `scripts/style_check.py`：为单章生成风格一致性检查 scaffold
-- `scripts/workflow_runner.py`：串行触发最小 workflow chain（支持 startup / style / style-full / chapter-full / writeback / refresh / deps / deps-all / full 模式）
+- `scripts/workflow_runner.py`：串行触发最小 workflow chain（支持 startup / style / style-full / chapter-full / writeback / refresh / deps / deps-all / doctor / full 模式）
 
 ---
 

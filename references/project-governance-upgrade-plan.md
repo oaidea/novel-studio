@@ -1,12 +1,16 @@
-# Novel Studio 升级规划（基于《凡尘箓》整理经验）
+# Novel Studio 升级状态说明（基于《凡尘箓》整理经验）
 
-> 目标：把《凡尘箓》项目整理过程中沉淀出的结构规则、卡片系统、变化管理、入口层级与命名规范，正式吸收到 `novel-studio` 里，升级为可复用的小说项目治理能力。
+> 说明：本文件原本是升级规划草案。
+> 截至当前版本，其中多数核心升级已完成；因此这里不再把它当“待做清单”，而改为：
+> 1. 记录已经吸收进 `novel-studio` 的能力
+> 2. 标出仍可继续增强的增量方向
 
 ---
 
-## 一、升级动机
+## 一、已完成吸收的核心能力
 
-当前 `novel-studio` 已经具备：
+### 1. 项目治理能力已正式纳入
+当前 `novel-studio` 已不再只是：
 - 立项
 - 设定
 - 规划
@@ -17,157 +21,87 @@
 - 学习
 - 风格库
 
-但还缺一层：
+还已正式纳入：
+- **项目治理 / 仓库结构治理 / 卡片化管理能力**
 
-> **项目治理 / 仓库结构治理 / 卡片化管理能力**
-
-《凡尘箓》这次整理，实际补上的就是这层能力。
-
----
-
-## 二、建议新增的能力层
-
-### 新增模式：项目治理模式（Project Governance Mode）
-
-用于处理：
-- 创作仓库结构整理
-- 实际创作 vs 发散思维分离
-- 总设定 vs 子设定拆层
-- 人物 / 空间 / 场景卡建立
-- 变化记录（change log）建立
-- 命名规范统一
-- 入口层级统一（README / project-notes / nav）
-- 导航摘要与母设定的分权
-
-一句话：
-
-> **不是写内容，而是让小说项目本身变得可维护。**
-
----
-
-## 三、建议纳入 `novel-studio` 的核心规则
-
-### 1. 创作流与发散流分离
-- `chapters/`：实际创作文本
-- `brainstorm/`：线索讨论、结构试探、发散稿
-
-规则：
-- 能直接参与定稿的进 `chapters/`
-- 还在试结构、试切法的进 `brainstorm/`
-
-### 2. 总设定与子设定拆层
-- `settings/core/`：总设定 / 上位真相 / 总纲
-- `settings/world/`：规则层 / 法则层 / 长线边界
-- `settings/subsettings/`：人物、关系、时间线、伏笔、空间、场景等子设定
-
-### 3. 对象卡与变化记录分离
-对以下对象统一采用：
-- **卡片本体**：写当前稳定状态
-- **变化记录**：写它是如何一步步变成现在的
-
-对象范围：
-- 人物
-- 空间
-- 场景
-
-### 4. 命名规范固定
-- 文件名优先写“对象是什么”
-- 状态写在目录，不写在文件名
-- 默认 kebab-case
-- 中文文件名仅用于少量总纲 / 展示型报告
-
-### 5. 入口层级统一
-- `README.md`：总入口
-- `docs/project-notes.md`：工作入口
-- `nav/`：快速摘要入口
-
-### 6. 导航不代替母设定
-- `nav/` 只做摘要
-- 详细规则以 `settings/` 为准
-- 若冲突，以 `settings/` 为准
-
----
-
-## 四、建议新增的技能资源
-
-### 1. 新增参考文档
-建议增加：
+对应落点包括：
+- `SKILL.md` 中的 **项目治理模式**
 - `references/project-governance.md`
-- `references/card-system.md`
-- `references/naming-conventions.md`
 - `references/entrypoint-layering.md`
+- `references/project-init-template.md`
+- `references/project-migration-flat-to-layered.md`
 
-### 2. 新增模板类参考
-建议增加：
-- 人物卡模板
-- 人物变化记录模板
-- 空间卡模板
-- 空间变化记录模板
-- 场景卡模板
-- 场景变化记录模板
+### 2. 骨架与脚手架已升级为 layered / packet-first
+当前标准骨架已明确支持：
+- `README.md / docs/project-notes.md / nav/` 三层入口
+- `chapters/` 与 `brainstorm/` 分流
+- `settings/core / world / subsettings` 分层
+- `events/`、`items/`、`project-style-card.md`
+- `.novel-studio/` 作为结构化工作内核
 
-### 3. 可选新增脚本（后续）
-如果以后要进一步自动化，可补：
-- 目录骨架初始化脚本
-- 卡片模板复制脚本
-- 命名规范检查脚本
-- 链接断裂扫描脚本
+对应落点包括：
+- `references/project-init-template.md`
+- `references/templates/project-skeleton-template.md`
+- `scripts/init_novel_project.py`
 
----
+### 3. 状态结构已升级
+当前推荐状态结构已从极简 draft 升级为更接近实战项目的版本：
+- `references/state-json-schema.md`
+- `references/chapter-meta-schema.md`
 
-## 五、建议修改 `SKILL.md` 的点
+### 4. 治理审计链路已补齐
+当前已具备：
+- `scripts/governance_audit.py`
+- `scripts/workflow_runner.py ... doctor`
 
-### 在“工作模式选择”中新增
-新增：
-- **项目治理模式**：整理小说项目结构、拆分设定层级、建立卡片系统、变化管理、命名规范与入口层级
-
-### 在项目结构部分升级
-把当前项目结构从“文件清单式”升级为“目录职责式”：
-- chapters
-- brainstorm
-- settings/core
-- settings/world
-- settings/subsettings
-- nav
-- docs
-- workflow
-- analysis
-
-### 增加治理规则
-补充：
-- 创作流 / 发散流分离
-- 总设定 / 子设定分层
-- 卡片本体 / 变化记录分离
-- 导航 / 工作入口 / 总入口分层
-- 命名规范
+用于发现：
+- 目录缺失
+- state/meta 漏项
+- 章节文件未登记进 meta
+- 入口文档引用失效
+- 常见治理漂移
 
 ---
 
-## 六、推荐落地顺序
+## 二、这轮升级真正改变了什么
 
-### Phase 1：文档升级
-- 更新 `SKILL.md`
-- 增加治理类 reference 文档
-- 把 fanchenlu 沉淀出的规则抽象成通用版本
-
-### Phase 2：模板升级
-- 增加卡片与 change log 模板
-- 补一个标准项目结构模板
-
-### Phase 3：自动化升级（可选）
-- 骨架初始化脚本
-- 命名检查脚本
-- 断链扫描脚本
-
----
-
-## 七、这次升级后的 `novel-studio` 新定位
-
-升级后，`novel-studio` 不再只是：
+升级后的 `novel-studio` 不再只是：
 - 会写小说
 - 会立项
 - 会做设定
 
 而是进一步成为：
 
-> **一个能管理小说项目结构、保持设定稳定、追踪对象变化、支持长期连载维护的创作工作室技能。**
+> **一个能管理小说项目结构、保持设定稳定、追踪对象变化、支持长期连载维护，并能自查治理漂移的创作工作台。**
+
+---
+
+## 三、仍值得继续增强的方向
+
+### 1. 更深的 doctor / lint 能力
+当前治理审计已经可用，但仍偏轻量。
+未来可继续增强：
+- naming lint
+- deeper link lint
+- packet / summary / meta consistency checks
+- stale index detection
+
+### 2. 回归测试 / fixture
+当前脚手架、模板、审计器已经形成闭环。
+下一步可继续补：
+- 最小样板工程
+- 脚本回归测试
+- 文档与脚手架一致性检查
+
+### 3. 自动迁移辅助
+当前已有迁移文档，但还没有真正的迁移助手脚本。
+未来可考虑：
+- old flat file mapping helper
+- nav / docs rewrite assistant
+- legacy archive helper
+
+---
+
+## 四、一句话结论
+
+> 《凡尘箓》这轮整理沉淀出的“项目治理能力”已经不再只是经验草案，而是已经进入 `novel-studio` 的正式骨架、文档与脚本链路。 
