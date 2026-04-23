@@ -17,6 +17,10 @@ It is not a black-box tool that “writes the whole novel for you”. It is a st
 
 ## Core Capabilities / 核心能力
 
+### Regression Guard / 回归防漂移
+- lightweight smoke regression for scaffold + doctor + chapter-full chain / 为脚手架 + doctor + chapter-full 主链路提供轻量回归护栏
+- fixture-oriented validation without committing a whole sample novel / 用 fixture 思路做验证，而不是提交一整套样板小说
+
 ### 1. Project Governance / 项目治理
 - project skeleton creation / 项目骨架创建
 - core/world/subsettings layering / 总设定、规则层、子设定分层
@@ -57,6 +61,26 @@ It is not a black-box tool that “writes the whole novel for you”. It is a st
 - writeback / refresh / style check / 回写、刷新与风格检查
 - workflow runner / 统一 workflow 入口
 - `humanize` / **去AI味** mode for chapter-sidecar polishing pass / 面向章节旁路稿的去AI味工作流入口（支持 `light / medium / heavy`，默认 `medium`）
+
+---
+
+### Smoke Regression / 最小回归校验
+
+When you want to verify that the scaffold and core workflow still match the documented standard, run:
+
+```bash
+python3 scripts/smoke_regression.py
+```
+
+What it validates:
+- init scaffold
+- governance audit / workflow doctor
+- chapter startup packet generation
+- chapter-full minimal output set
+
+Reference:
+- `references/fixtures-minimal-layered-project.md`
+- `references/scripts-index.md`
 
 ---
 
