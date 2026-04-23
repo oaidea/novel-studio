@@ -86,9 +86,10 @@ When you want a fast project health check, run:
 python3 scripts/workflow_runner.py <project-dir> ch_0001 doctor
 ```
 
-Current `doctor` runs two layers:
+Current `doctor` runs three layers:
 - `governance_audit.py`：查骨架、入口、目录与文档漂移
 - `consistency_audit.py`：查 `state / chapter-meta / chapter files / packet-first artifacts` 是否互相一致
+- `naming_lint.py`：查文件名是否开始把状态、版本、临时标记塞进名字里
 
 Reference:
 - `references/fixtures-minimal-layered-project.md`
