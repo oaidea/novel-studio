@@ -32,6 +32,8 @@ STATUS_BY_DIR = {
     "revisions": "reference",
 }
 
+PRIMARY_STATUS_DIRS = {"published", "candidates", "early-drafts", "drafts"}
+
 
 def rel(path: Path, root: Path) -> str:
     try:
@@ -136,7 +138,9 @@ def main() -> int:
         item = meta_by_id.get(cid)
         if not item:
             continue
-        expected_statuses = {STATUS_BY_DIR.get(p.parent.name) for p in paths if p.parent.name in STATUS_BY_DIR}
+        primary_paths = [p for p in paths if p.parent.name in PRIMARY_STATUS_DIRS]
+        revision_paths = [p for p in paths if p.parent.name == "revisions"]
+        expected_statuses = {STATUS_BY_DIR.get(p.parent.name) for p in primary_paths if p.parent.name in STATUS_BY_DIR}
         expected_statuses.discard(None)
         actual_status = item.get("status")
         if len(expected_statuses) == 1:
@@ -147,7 +151,12 @@ def main() -> int:
                 )
         elif len(expected_statuses) > 1:
             warnings.append(
-                f"chapter appears in multiple status directories: {cid} -> {', '.join(sorted(rel(p, root) for p in paths))}"
+                f"chapter appears in multiple active status directories: {cid} -> {', '.join(sorted(rel(p, root) for p in primary_paths))}"
+            )
+
+        if revision_paths:
+            notes.append(
+                f"chapter has revision-layer files: {cid} -> {', '.join(sorted(rel(p, root) for p in revision_paths))}"
             )
 
     # 3) hasPacket / hasSummary alignment
@@ -168,7 +177,11 @@ def main() -> int:
             "chapters_published": len(ids_by_status.get("published", set())),
             "chapters_candidate": len(ids_by_status.get("candidate", set())),
             "chapters_draft": len(ids_by_status.get("draft", set())),
-            "chapters_reference_only": len(ids_by_status.get("reference", set())),
+            "chapters_reference_only": len({
+                cid
+                for cid, paths in files_by_id.items()
+                if any(p.parent.name == "revisions" for p in paths) and cid not in ids_by_status.get("published", set()) and cid not in ids_by_status.get("candidate", set()) and cid not in ids_by_status.get("draft", set())
+            }),
         }
         for key, actual in actual_counts.items():
             if key in summary_block and summary_block.get(key) != actual:
