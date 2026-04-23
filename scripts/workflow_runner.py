@@ -310,6 +310,7 @@ def write_structured_summary(
         "inputPackDefault": str(input_pack_default.name),
         "inputPackUsageHint": usage_hint,
         "risks": risks,
+        "chapterOverview": f".novel-studio/logs/{chapter_id}-chapter-overview.md",
         "readyItems": [
             {"label": label, "ready": ok, "path": str(path.relative_to(path.parents[1])) if path.exists() else str(path)}
             for label, ok, path in ready_items
@@ -324,7 +325,7 @@ def write_structured_summary(
 def main() -> int:
     if len(sys.argv) < 4:
         print("usage: workflow_runner.py <project-dir> <chapter-id> <mode> [project-name-or-level]")
-        print("modes: startup | style | style-full | chapter-full | humanize | writeback | refresh | deps | deps-all | doctor | full")
+        print("modes: startup | style | style-full | chapter-full | humanize | writeback | refresh | deps | deps-all | doctor | overview | full")
         return 1
 
     root = Path(sys.argv[1]).expanduser().resolve()
@@ -380,6 +381,7 @@ def main() -> int:
             note("indexes directory not found; refresh will prepare it")
             run_py(SCRIPT_DIR / "index_refresh.py", str(root))
         run_py(SCRIPT_DIR / "build_input_pack.py", str(root), chapter_id)
+        run_py(SCRIPT_DIR / "chapter_overview.py", str(root), chapter_id)
 
         version_num = next_report_version(logs_dir, chapter_id)
         version_tag = f"v{version_num}"
@@ -425,6 +427,24 @@ def main() -> int:
         humanize_level, humanize_recommendation, humanize_reasons = build_humanize_recommendation(
             summary, packet, style_overlay, object_summary
         )
+        lines += ["", "## 本章片段 / Clips", ""]
+        overview_json = logs_dir / f"{chapter_id}-chapter-overview.json"
+        clips = []
+        if overview_json.exists():
+            try:
+                overview_data = json.loads(overview_json.read_text(encoding="utf-8"))
+                clips = overview_data.get("clips", [])
+            except Exception:
+                clips = []
+        if clips:
+            for item in clips:
+                lines.append(f"- {item.get('title', item.get('slug', 'clip'))} (`{item.get('slug', '')}`) — status={item.get('status', '')}")
+                if item.get("tags"):
+                    lines.append(f"  - tags: {', '.join(item['tags'])}")
+                lines.append(f"  - path: `{item.get('path', '')}`")
+        else:
+            lines.append("- 当前本章无已归属 clips")
+
         lines += ["", "## 本章工作流路由", ""]
         lines.append(f"**路线：`{route_label}`**")
         for step in route_steps:
@@ -574,6 +594,8 @@ def main() -> int:
         run_py(SCRIPT_DIR / "governance_audit.py", str(root))
         run_py(SCRIPT_DIR / "consistency_audit.py", str(root))
         run_py(SCRIPT_DIR / "naming_lint.py", str(root))
+    elif mode == "overview":
+        run_py(SCRIPT_DIR / "chapter_overview.py", str(root), chapter_id)
     elif mode == "full":
         if not packet.exists():
             note("chapter packet not found; startup will prepare one")
@@ -606,7 +628,7 @@ def main() -> int:
         run_py(SCRIPT_DIR / "index_refresh.py", str(root))
     else:
         print(f"unknown mode: {mode}")
-        print("modes: startup | style | style-full | chapter-full | humanize | writeback | refresh | deps | deps-all | doctor | full")
+        print("modes: startup | style | style-full | chapter-full | humanize | writeback | refresh | deps | deps-all | doctor | overview | full")
         return 1
 
     print(f"workflow mode '{mode}' completed for {chapter_id}")

@@ -48,6 +48,22 @@ def seed_minimal_content(project: Path) -> None:
         encoding="utf-8",
     )
 
+    clip = project / "chapters" / "clips" / "old-lamp-memory.md"
+    clip.write_text(
+        "---\n"
+        "type: clip\n"
+        "title: 旧灯记忆片段\n"
+        "chapter: ch_002\n"
+        "status: active\n"
+        "created_at: 2026-04-23 00:00:00 +0800\n"
+        "updated_at: 2026-04-23 00:00:00 +0800\n"
+        "tags: [\"memory\", \"flashback\"]\n"
+        "merged_into:\n"
+        "---\n\n"
+        "她想起旧灯第一次亮起的那个晚上。\n",
+        encoding="utf-8",
+    )
+
     state = project / ".novel-studio" / "state.json"
     state.write_text(
         json.dumps(
@@ -168,6 +184,7 @@ def main() -> int:
         run(str(SCRIPTS / "chapter_startup.py"), str(project), chapter_id)
         customize_packet(project, chapter_id)
         run(str(SCRIPTS / "workflow_runner.py"), str(project), chapter_id, "chapter-full", project.name)
+        run(str(SCRIPTS / "workflow_runner.py"), str(project), chapter_id, "overview")
 
         expected = [
             project / "README.md",
@@ -185,6 +202,8 @@ def main() -> int:
             project / ".novel-studio" / "logs" / f"{chapter_id}-input-pack-review.md",
             project / ".novel-studio" / "logs" / f"{chapter_id}-chapter-full-report-v1.md",
             project / ".novel-studio" / "logs" / f"{chapter_id}-chapter-full-report-v1.json",
+            project / ".novel-studio" / "logs" / f"{chapter_id}-chapter-overview.md",
+            project / ".novel-studio" / "logs" / f"{chapter_id}-chapter-overview.json",
             project / ".novel-studio" / "indexes" / "active-characters.md",
             project / ".novel-studio" / "indexes" / "active-scenes.md",
             project / ".novel-studio" / "indexes" / "active-clips.md",

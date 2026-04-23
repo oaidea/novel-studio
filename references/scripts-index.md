@@ -15,6 +15,7 @@
 - `scripts/naming_lint.py`：审计文件命名是否出现状态塞进文件名、final-v2 漂移、对象区非 kebab-case 等命名坏味道
 - `scripts/workflow_runner.py`：串行触发最小 workflow chain
 - `scripts/clip_manager.py`：创建 / 列表 / 查看 / 更新 / 状态流转 / merge Clip 的最小管理脚本
+- `scripts/chapter_overview.py`：生成单章 overview，汇总 chapter files + clips + packet-first 产物
 
 当前状态：
 - 已提供第一版 scaffold / 轻量实用工具混合层
