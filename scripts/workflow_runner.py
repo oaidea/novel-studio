@@ -17,7 +17,44 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 REPORT_STAGE = "chapter-full / packet-first / style-aware / object-summary / input-pack v2"
 
 
+def default_state_data(project_name: str) -> dict:
+    return {
+        "project": project_name,
+        "volume": "",
+        "version": "0.1.0",
+        "last_updated": datetime.now().strftime("%Y-%m-%d"),
+        "status": "active",
+        "writing_mode": "packet-first",
+        "summary": {
+            "total_chapters_planned": 0,
+            "chapters_published": 0,
+            "chapters_candidate": 0,
+            "chapters_draft": 0,
+            "chapters_reference_only": 0,
+        },
+        "current_phase": "",
+        "main_strand": {
+            "quest": "",
+            "fire": "",
+            "constellation": "",
+        },
+        "active_conflicts": [],
+        "key_open_threads": [],
+        "strand_balance": {
+            "quest_last推进": "",
+            "fire_last推进": "",
+            "constellation_last推进": "",
+        },
+    }
+
+
 def run(cmd: list[str]) -> None:
+    print("+", " ".join(cmd))
+    subprocess.run(cmd, check=True)
+
+
+def run_py(script: Path, *args: str) -> None:
+    cmd = [sys.executable, str(script), *args]
     print("+", " ".join(cmd))
     subprocess.run(cmd, check=True)
 
@@ -287,7 +324,7 @@ def write_structured_summary(
 def main() -> int:
     if len(sys.argv) < 4:
         print("usage: workflow_runner.py <project-dir> <chapter-id> <mode> [project-name-or-level]")
-        print("modes: startup | style | style-full | chapter-full | humanize | writeback | refresh | full")
+        print("modes: startup | style | style-full | chapter-full | humanize | writeback | refresh | deps | deps-all | doctor | full")
         return 1
 
     root = Path(sys.argv[1]).expanduser().resolve()
@@ -309,21 +346,21 @@ def main() -> int:
     input_pack_default = logs_dir / f"{chapter_id}-input-pack.md"
 
     if mode == "startup":
-        run([str(SCRIPT_DIR / "chapter_startup.py"), str(root), chapter_id])
+        run_py(SCRIPT_DIR / "chapter_startup.py", str(root), chapter_id)
     elif mode == "style":
         if not style_card.exists():
             note("project style card not found; consider running extract_project_style.py first")
-        run([str(SCRIPT_DIR / "style_check.py"), str(root), chapter_id])
+        run_py(SCRIPT_DIR / "style_check.py", str(root), chapter_id)
     elif mode == "style-full":
         if not style_card.exists():
             note("project style card not found; extracting project style scaffold now")
-            run([str(SCRIPT_DIR / "extract_project_style.py"), str(root), project_name])
+            run_py(SCRIPT_DIR / "extract_project_style.py", str(root), project_name)
         if not packet.exists():
             note("chapter packet not found; startup will prepare one")
-            run([str(SCRIPT_DIR / "chapter_startup.py"), str(root), chapter_id])
+            run_py(SCRIPT_DIR / "chapter_startup.py", str(root), chapter_id)
         if style_card.exists() and not style_overlay.exists():
-            run([str(SCRIPT_DIR / "build_style_packet.py"), str(root), chapter_id, str(style_card.relative_to(root))])
-        run([str(SCRIPT_DIR / "style_check.py"), str(root), chapter_id])
+            run_py(SCRIPT_DIR / "build_style_packet.py", str(root), chapter_id, str(style_card.relative_to(root)))
+        run_py(SCRIPT_DIR / "style_check.py", str(root), chapter_id)
     elif mode == "chapter-full":
         if not summary.exists():
             ensure_file(
@@ -331,18 +368,18 @@ def main() -> int:
                 f"# {chapter_id} 摘要\n\n## 一、本章发生了什么\n- \n\n## 二、人物停在哪\n- \n\n## 三、事件推进到哪\n- \n\n## 四、空间 / 场景状态变化\n- \n\n## 五、时间锚点\n- \n\n## 六、下一章承接点\n- \n",
             )
         if not packet.exists():
-            run([str(SCRIPT_DIR / "chapter_startup.py"), str(root), chapter_id])
+            run_py(SCRIPT_DIR / "chapter_startup.py", str(root), chapter_id)
         if not style_card.exists():
             note("project style card not found; extracting project style scaffold now")
-            run([str(SCRIPT_DIR / "extract_project_style.py"), str(root), project_name])
+            run_py(SCRIPT_DIR / "extract_project_style.py", str(root), project_name)
         if style_card.exists() and not style_overlay.exists():
-            run([str(SCRIPT_DIR / "build_style_packet.py"), str(root), chapter_id, str(style_card.relative_to(root))])
+            run_py(SCRIPT_DIR / "build_style_packet.py", str(root), chapter_id, str(style_card.relative_to(root)))
         if not object_summary.exists() and packet.exists():
-            run([str(SCRIPT_DIR / "build_object_state_summary.py"), str(root), chapter_id])
+            run_py(SCRIPT_DIR / "build_object_state_summary.py", str(root), chapter_id)
         if not indexes.exists():
             note("indexes directory not found; refresh will prepare it")
-            run([str(SCRIPT_DIR / "index_refresh.py"), str(root)])
-        run([str(SCRIPT_DIR / "build_input_pack.py"), str(root), chapter_id])
+            run_py(SCRIPT_DIR / "index_refresh.py", str(root))
+        run_py(SCRIPT_DIR / "build_input_pack.py", str(root), chapter_id)
 
         version_num = next_report_version(logs_dir, chapter_id)
         version_tag = f"v{version_num}"
@@ -524,15 +561,17 @@ def main() -> int:
             missing,
         )
     elif mode == "humanize":
-        run([str(SCRIPT_DIR / "humanize_pass.py"), str(root), chapter_id, humanize_level_arg])
+        run_py(SCRIPT_DIR / "humanize_pass.py", str(root), chapter_id, humanize_level_arg)
     elif mode == "writeback":
-        run([str(SCRIPT_DIR / "writeback_sync.py"), str(root), chapter_id])
+        run_py(SCRIPT_DIR / "writeback_sync.py", str(root), chapter_id)
     elif mode == "refresh":
-        run([str(SCRIPT_DIR / "index_refresh.py"), str(root)])
+        run_py(SCRIPT_DIR / "index_refresh.py", str(root))
     elif mode == "deps":
-        run([str(SCRIPT_DIR / "build_chapter_deps.py"), str(root), chapter_id])
+        run_py(SCRIPT_DIR / "build_chapter_deps.py", str(root), chapter_id)
     elif mode == "deps-all":
-        run([str(SCRIPT_DIR / "build_chapter_deps.py"), str(root), "all"])
+        run_py(SCRIPT_DIR / "build_chapter_deps.py", str(root), "all")
+    elif mode == "doctor":
+        run_py(SCRIPT_DIR / "governance_audit.py", str(root))
     elif mode == "full":
         if not packet.exists():
             note("chapter packet not found; startup will prepare one")
@@ -545,35 +584,27 @@ def main() -> int:
             )
         ensure_json(
             state_json,
-            {
-                "project": root.name,
-                "currentArc": "",
-                "currentChapter": chapter_id,
-                "currentTimeAnchor": "",
-                "currentConflicts": [],
-                "topPriorities": [],
-                "pendingForeshadowing": [],
-            },
+            default_state_data(root.name),
         )
         ensure_json(meta_json, {"chapters": []})
 
         if not style_card.exists():
             note("project style card not found; extracting project style scaffold now")
-            run([str(SCRIPT_DIR / "extract_project_style.py"), str(root), project_name])
+            run_py(SCRIPT_DIR / "extract_project_style.py", str(root), project_name)
         if not packet.exists():
-            run([str(SCRIPT_DIR / "chapter_startup.py"), str(root), chapter_id])
+            run_py(SCRIPT_DIR / "chapter_startup.py", str(root), chapter_id)
         if style_card.exists() and not style_overlay.exists():
-            run([str(SCRIPT_DIR / "build_style_packet.py"), str(root), chapter_id, str(style_card.relative_to(root))])
+            run_py(SCRIPT_DIR / "build_style_packet.py", str(root), chapter_id, str(style_card.relative_to(root)))
         if not object_summary.exists() and packet.exists():
-            run([str(SCRIPT_DIR / "build_object_state_summary.py"), str(root), chapter_id])
-        run([str(SCRIPT_DIR / "build_input_pack.py"), str(root), chapter_id])
+            run_py(SCRIPT_DIR / "build_object_state_summary.py", str(root), chapter_id)
+        run_py(SCRIPT_DIR / "build_input_pack.py", str(root), chapter_id)
 
-        run([str(SCRIPT_DIR / "writeback_sync.py"), str(root), chapter_id])
-        run([str(SCRIPT_DIR / "style_check.py"), str(root), chapter_id])
-        run([str(SCRIPT_DIR / "index_refresh.py"), str(root)])
+        run_py(SCRIPT_DIR / "writeback_sync.py", str(root), chapter_id)
+        run_py(SCRIPT_DIR / "style_check.py", str(root), chapter_id)
+        run_py(SCRIPT_DIR / "index_refresh.py", str(root))
     else:
         print(f"unknown mode: {mode}")
-        print("modes: startup | style | style-full | chapter-full | humanize | writeback | refresh | deps | deps-all | full")
+        print("modes: startup | style | style-full | chapter-full | humanize | writeback | refresh | deps | deps-all | doctor | full")
         return 1
 
     print(f"workflow mode '{mode}' completed for {chapter_id}")
