@@ -8,6 +8,7 @@ Supports:
 - list: list clips with filters
 - show: show a clip's parsed metadata and content path
 - update: update clip metadata/content
+- rename: rename clip title and optionally slug
 - status: controlled status transition
 - merge: convenience wrapper for setting status=merged
 
@@ -299,9 +300,33 @@ def cmd_merge(root: Path, argv: list[str]) -> int:
     return 0
 
 
+def cmd_rename(root: Path, argv: list[str]) -> int:
+    if len(argv) < 2:
+        print("usage: clip_manager.py <project-dir> rename <title_or_slug> <new_title> [new_slug]")
+        return 1
+    path = find_clip(root, argv[0])
+    if not path:
+        print(f"clip not found: {argv[0]}")
+        return 2
+    new_title = argv[1]
+    new_slug = argv[2] if len(argv) >= 3 and argv[2] else None
+    data, body = load_clip(path)
+    data["title"] = new_title
+    data["updated_at"] = now_local()
+    target_path = path
+    if new_slug:
+        target_slug = ensure_unique_slug(path.parent, slugify(new_slug))
+        target_path = path.parent / f"{target_slug}.md"
+    save_clip(target_path, data, body)
+    if target_path != path and path.exists():
+        path.unlink()
+    print(f"renamed clip: {target_path}")
+    return 0
+
+
 def main() -> int:
     if len(sys.argv) < 3:
-        print("usage: clip_manager.py <project-dir> <create|list|show|update|status|merge> ...")
+        print("usage: clip_manager.py <project-dir> <create|list|show|update|rename|status|merge> ...")
         return 1
     root = Path(sys.argv[1]).expanduser().resolve()
     cmd = sys.argv[2]
@@ -314,6 +339,8 @@ def main() -> int:
         return cmd_show(root, argv)
     if cmd == "update":
         return cmd_update(root, argv)
+    if cmd == "rename":
+        return cmd_rename(root, argv)
     if cmd == "status":
         return cmd_status(root, argv)
     if cmd == "merge":

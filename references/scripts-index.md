@@ -16,6 +16,8 @@
 - `scripts/workflow_runner.py`：串行触发最小 workflow chain
 - `scripts/clip_manager.py`：创建 / 列表 / 查看 / 更新 / 状态流转 / merge Clip 的最小管理脚本
 - `scripts/chapter_overview.py`：生成单章 overview，汇总 chapter files + clips + packet-first 产物
+- `scripts/clip_overview.py`：生成项目级 Clip 总览（当前支持 `unassigned / all`）
+- `scripts/clip_stats_sync.py`：把 Clip 统计回写进 `state.json` 与 `chapter-meta.json`
 
 当前状态：
 - 已提供第一版 scaffold / 轻量实用工具混合层

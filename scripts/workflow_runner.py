@@ -325,7 +325,7 @@ def write_structured_summary(
 def main() -> int:
     if len(sys.argv) < 4:
         print("usage: workflow_runner.py <project-dir> <chapter-id> <mode> [project-name-or-level]")
-        print("modes: startup | style | style-full | chapter-full | humanize | writeback | refresh | deps | deps-all | doctor | overview | full")
+        print("modes: startup | style | style-full | chapter-full | humanize | writeback | refresh | deps | deps-all | doctor | overview | clip-overview | clip-stats-sync | full")
         return 1
 
     root = Path(sys.argv[1]).expanduser().resolve()
@@ -615,6 +615,10 @@ def main() -> int:
         run_py(SCRIPT_DIR / "naming_lint.py", str(root))
     elif mode == "overview":
         run_py(SCRIPT_DIR / "chapter_overview.py", str(root), chapter_id)
+    elif mode == "clip-overview":
+        run_py(SCRIPT_DIR / "clip_overview.py", str(root), chapter_id)
+    elif mode == "clip-stats-sync":
+        run_py(SCRIPT_DIR / "clip_stats_sync.py", str(root))
     elif mode == "full":
         if not packet.exists():
             note("chapter packet not found; startup will prepare one")
@@ -647,7 +651,7 @@ def main() -> int:
         run_py(SCRIPT_DIR / "index_refresh.py", str(root))
     else:
         print(f"unknown mode: {mode}")
-        print("modes: startup | style | style-full | chapter-full | humanize | writeback | refresh | deps | deps-all | doctor | overview | full")
+        print("modes: startup | style | style-full | chapter-full | humanize | writeback | refresh | deps | deps-all | doctor | overview | clip-overview | clip-stats-sync | full")
         return 1
 
     print(f"workflow mode '{mode}' completed for {chapter_id}")
