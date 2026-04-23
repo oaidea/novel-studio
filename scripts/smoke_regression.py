@@ -48,6 +48,36 @@ def seed_minimal_content(project: Path) -> None:
         encoding="utf-8",
     )
 
+    state = project / ".novel-studio" / "state.json"
+    state.write_text(
+        json.dumps(
+            {
+                "project": project.name,
+                "volume": "",
+                "version": "0.1.0",
+                "last_updated": "2026-04-23",
+                "status": "active",
+                "writing_mode": "packet-first",
+                "summary": {
+                    "total_chapters_planned": 0,
+                    "chapters_published": 1,
+                    "chapters_candidate": 0,
+                    "chapters_draft": 0,
+                    "chapters_reference_only": 0,
+                },
+                "current_phase": "ch_001 已有发布章，等待后续章节启动",
+                "main_strand": {"quest": "", "fire": "", "constellation": ""},
+                "active_conflicts": [],
+                "key_open_threads": [],
+                "strand_balance": {"quest_last推进": "ch_001", "fire_last推进": "", "constellation_last推进": ""},
+            },
+            ensure_ascii=False,
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
     meta = project / ".novel-studio" / "chapter-meta.json"
     meta.write_text(
         json.dumps(

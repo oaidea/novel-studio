@@ -572,6 +572,7 @@ def main() -> int:
         run_py(SCRIPT_DIR / "build_chapter_deps.py", str(root), "all")
     elif mode == "doctor":
         run_py(SCRIPT_DIR / "governance_audit.py", str(root))
+        run_py(SCRIPT_DIR / "consistency_audit.py", str(root))
     elif mode == "full":
         if not packet.exists():
             note("chapter packet not found; startup will prepare one")

@@ -78,6 +78,18 @@ What it validates:
 - chapter startup packet generation
 - chapter-full minimal output set
 
+### Doctor / 双层审计
+
+When you want a fast project health check, run:
+
+```bash
+python3 scripts/workflow_runner.py <project-dir> ch_0001 doctor
+```
+
+Current `doctor` runs two layers:
+- `governance_audit.py`：查骨架、入口、目录与文档漂移
+- `consistency_audit.py`：查 `state / chapter-meta / chapter files / packet-first artifacts` 是否互相一致
+
 Reference:
 - `references/fixtures-minimal-layered-project.md`
 - `references/scripts-index.md`
