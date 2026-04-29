@@ -86,7 +86,9 @@ NOVEL_STUDIO_README = """# .novel-studio
 """
 
 CONFIG_TEMPLATE = {
-    "directApi": None,
+    "directApi": {
+        "model": ""
+    },
 }
 
 ACTIVE_INDEX_PLACEHOLDER = """# {title}

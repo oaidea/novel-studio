@@ -50,6 +50,72 @@ def read_text(path: Path) -> str:
     return path.read_text(encoding="utf-8")
 
 
+def project_config_path(root: Path) -> Path:
+    return root / ".novel-studio" / "config.json"
+
+
+def providers_from_config(data: dict) -> dict:
+    if "providers" in data and isinstance(data["providers"], dict):
+        return data["providers"]
+    models = data.get("models")
+    if isinstance(models, dict) and isinstance(models.get("providers"), dict):
+        return models["providers"]
+    return {}
+
+
+def load_system_model(model_ref: str) -> dict | None:
+    config_paths = [
+        Path("/root/.openclaw/agents/main/agent/models.json"),
+        Path("/root/.openclaw/openclaw.json"),
+    ]
+    for cfg_path in config_paths:
+        try:
+            data = json.loads(cfg_path.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+        providers = providers_from_config(data)
+        for provider_id, provider in providers.items():
+            if not isinstance(provider, dict):
+                continue
+            base_url = provider.get("baseUrl") or provider.get("baseURL") or provider.get("base_url") or ""
+            provider_api = provider.get("api") or ""
+            for m in provider.get("models") or []:
+                if not isinstance(m, dict) or not m.get("id"):
+                    continue
+                full = f"{provider_id}/{m['id']}"
+                if model_ref not in {full, m["id"]}:
+                    continue
+                return {
+                    "provider": provider_id,
+                    "model": m["id"],
+                    "modelFull": full,
+                    "baseUrl": base_url,
+                    "api": m.get("api") or provider_api,
+                    "maxTokens": m.get("maxTokens"),
+                    "source": str(cfg_path),
+                }
+    return None
+
+
+def env_name_for(provider: str) -> str:
+    safe = "".join(ch if ch.isalnum() else "_" for ch in provider.upper())
+    return "NOVEL_STUDIO_API_KEY_" + safe
+
+
+def read_project_direct_api(root: Path) -> tuple[dict | None, Path]:
+    cfg_path = project_config_path(root)
+    if not cfg_path.exists():
+        return None, cfg_path
+    try:
+        cfg = json.loads(cfg_path.read_text(encoding="utf-8"))
+        direct = cfg.get("directApi")
+        if isinstance(direct, dict):
+            return direct, cfg_path
+    except Exception:
+        pass
+    return None, cfg_path
+
+
 def safe_rel(root: Path, raw: str) -> Path | None:
     raw = raw.strip().strip("`").strip()
     if not raw or raw.startswith(("http://", "https://")):
@@ -160,56 +226,30 @@ def main() -> int:
     base_url = args.base_url
     model = args.model
     api_key_env = args.api_key_env
-    project_cfg = root / ".novel-studio" / "config.json"
-    legacy_state_cfg = root / ".novel-studio" / "state.json"
-    legacy_project_cfg = root / ".novel-studio" / "direct-api-config.json"
-    has_project_config = False
-    cfg_source = project_cfg
-    if project_cfg.exists():
-        try:
-            ns_cfg = json.loads(project_cfg.read_text(encoding="utf-8"))
-            cfg = ns_cfg.get("directApi") if isinstance(ns_cfg, dict) else None
-            if isinstance(cfg, dict):
-                has_project_config = True
-                base_url = base_url or cfg.get("baseUrl", "")
-                model = model or cfg.get("model", "")
-                api_key_env = args.api_key_env if args.api_key_env != DEFAULT_API_KEY_ENV else cfg.get("apiKeyEnv", args.api_key_env)
-                if args.temperature == 0.7 and cfg.get("temperature") is not None:
-                    args.temperature = float(cfg.get("temperature"))
-                if args.max_tokens == 6000 and cfg.get("maxTokens") is not None:
-                    args.max_tokens = int(cfg.get("maxTokens"))
-        except Exception as e:
-            print(f"warning: failed to read direct API config: {e}", file=sys.stderr)
-    if not has_project_config and legacy_state_cfg.exists():
-        cfg_source = legacy_state_cfg
-        try:
-            state_cfg = json.loads(legacy_state_cfg.read_text(encoding="utf-8"))
-            cfg = state_cfg.get("directApi") if isinstance(state_cfg, dict) else None
-            if isinstance(cfg, dict):
-                has_project_config = True
-                base_url = base_url or cfg.get("baseUrl", "")
-                model = model or cfg.get("model", "")
-                api_key_env = args.api_key_env if args.api_key_env != DEFAULT_API_KEY_ENV else cfg.get("apiKeyEnv", args.api_key_env)
-                if args.temperature == 0.7 and cfg.get("temperature") is not None:
-                    args.temperature = float(cfg.get("temperature"))
-                if args.max_tokens == 6000 and cfg.get("maxTokens") is not None:
-                    args.max_tokens = int(cfg.get("maxTokens"))
-        except Exception as e:
-            print(f"warning: failed to read legacy direct API config from state: {e}", file=sys.stderr)
-    if not has_project_config and legacy_project_cfg.exists():
-        cfg_source = legacy_project_cfg
-        has_project_config = True
-        try:
-            cfg = json.loads(legacy_project_cfg.read_text(encoding="utf-8"))
-            base_url = base_url or cfg.get("baseUrl", "")
-            model = model or cfg.get("model", "")
-            api_key_env = args.api_key_env if args.api_key_env != DEFAULT_API_KEY_ENV else cfg.get("apiKeyEnv", args.api_key_env)
-            if args.temperature == 0.7 and cfg.get("temperature") is not None:
-                args.temperature = float(cfg.get("temperature"))
-            if args.max_tokens == 6000 and cfg.get("maxTokens") is not None:
-                args.max_tokens = int(cfg.get("maxTokens"))
-        except Exception as e:
-            print(f"warning: failed to read legacy direct API config: {e}", file=sys.stderr)
+    cfg_source = project_config_path(root)
+    direct_cfg, cfg_source = read_project_direct_api(root)
+    has_project_config = direct_cfg is not None
+    if has_project_config:
+        configured_model = direct_cfg.get("model") or direct_cfg.get("modelFull")
+        if configured_model and not model:
+            system_model = load_system_model(configured_model)
+            if not system_model:
+                print(f"configured model not found in OpenClaw system models: {configured_model}", file=sys.stderr)
+                print("hint: run scripts/ns_model_config.py list, then scripts/ns_model_config.py init <project-dir>", file=sys.stderr)
+                return 2
+            model = system_model["model"]
+            base_url = base_url or system_model.get("baseUrl", "")
+            if args.max_tokens == 6000 and system_model.get("maxTokens") is not None:
+                args.max_tokens = min(int(system_model.get("maxTokens") or 6000), args.max_tokens)
+            if args.api_key_env == DEFAULT_API_KEY_ENV:
+                api_key_env = direct_cfg.get("apiKeyEnv") or env_name_for(system_model["provider"])
+        base_url = base_url or direct_cfg.get("baseUrl", "")
+        model = model or direct_cfg.get("model", "")
+        api_key_env = args.api_key_env if args.api_key_env != DEFAULT_API_KEY_ENV else direct_cfg.get("apiKeyEnv", api_key_env)
+        if args.temperature == 0.7 and direct_cfg.get("temperature") is not None:
+            args.temperature = float(direct_cfg.get("temperature"))
+        if args.max_tokens == 6000 and direct_cfg.get("maxTokens") is not None:
+            args.max_tokens = int(direct_cfg.get("maxTokens"))
     if not model or not base_url:
         print("direct API model is not configured for this project.", file=sys.stderr)
         print(f"hint: run scripts/ns_model_config.py init {root}", file=sys.stderr)

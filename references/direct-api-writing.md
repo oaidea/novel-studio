@@ -68,16 +68,12 @@ python3 scripts/ns_model_config.py init <project-dir> --select 1 --non-interacti
 ```json
 {
   "directApi": {
-    "provider": "lsj",
-    "model": "gpt-5.5",
-    "modelFull": "lsj/gpt-5.5",
-    "baseUrl": "https://codex.ooooo.codes/v1",
-    "apiKeyEnv": "NOVEL_STUDIO_API_KEY_LSJ"
+    "model": "lsj/gpt-5.5"
   }
 }
 ```
 
-注意：该文件**不复制 OpenClaw 的 API key**，只记录 provider / model / baseUrl / apiKeyEnv。真实执行前仍需 export 对应环境变量。
+注意：该文件**不复制 OpenClaw 的 API key**，只记录 model（必要）和少量覆盖项（如 temperature/maxTokens/apiKeyEnv）。真实执行前仍需 export 对应环境变量。
 
 ### 手动环境变量
 
