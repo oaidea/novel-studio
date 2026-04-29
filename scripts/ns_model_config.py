@@ -143,13 +143,15 @@ def resolve_selection(rows: list[dict], select: str | None) -> dict | None:
     if not select:
         return supported[0] if supported else rows[0]
     s = select.strip()
+    s_lower = s.lower()
     if s.isdigit():
         idx = int(s) - 1
         if 0 <= idx < len(rows):
             return rows[idx]
         return None
     for r in rows:
-        if s in {r["full"], r["model"], r.get("alias", "")}:
+        candidates = {r["full"], r["model"], r.get("alias", "")}
+        if s in candidates or s_lower in {c.lower() for c in candidates if c}:
             return r
     return None
 
