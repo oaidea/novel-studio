@@ -35,6 +35,9 @@
 │   ├── active-spaces.md
 │   ├── active-scenes.md
 │   └── pending-foreshadowing.md
+├── history/                    # 创作历史记录
+│   └── YYYY-MM-DD_HHmmss_<chapter>_<type>_<id>.md
+├── outputs/                    # 直连 API 输出文件
 └── logs/                       # 可选：工作流日志 / 自动生成日志
 ```
 
@@ -85,7 +88,18 @@
 - 新章节启动时，先快速知道“现在有哪些东西是活的”
 - 而不是靠全文搜索推断
 
-### 6. `logs/`
+### 6. `history/`
+创作历史记录目录。
+
+每次小说创作/润色/修改等产生新内容的操作，自动生成一条独立的 Markdown 历史文件。
+
+文件内容：
+- **JSON frontmatter**：结构化元数据（时间、章节、任务类型、模型信息、统计）
+- **Markdown body**：创作目的/要求、生成模型信息、生成结果正文
+
+管理脚本：`scripts/ns_history.py`
+
+### 7. `logs/`
 可选。
 
 未来如果有自动化脚本，可以把：

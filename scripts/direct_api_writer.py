@@ -344,6 +344,59 @@ def _auto_fallback_to_system(direct_cfg: dict | None) -> tuple[bool, str]:
         return False, f"write_error: {write_err}"
 
 
+def _record_history(
+    root: Path, chapter_id: str, prompt_profile: str,
+    instruction: str, output_path: Path, content: str,
+    model: str, api: str, base_url: str,
+    temperature: float, max_tokens: int,
+    input_chars: int, elapsed: float,
+    resolved_model_config: dict | None,
+) -> None:
+    """Record a creation history entry via ns_history.py after successful API call.
+    Best-effort: failures are logged but not fatal."""
+    ns_history = Path(__file__).resolve().parent / "ns_history.py"
+    if not ns_history.exists():
+        return
+
+    # Map prompt_profile to task_type
+    type_map = {
+        "draft": "write_chapter",
+        "rewrite": "rewrite",
+        "humanize": "humanize",
+        "review": "review",
+    }
+    task_type = type_map.get(prompt_profile, prompt_profile)
+
+    # Extract provider from resolved config
+    provider = ""
+    if isinstance(resolved_model_config, dict):
+        provider = resolved_model_config.get("provider", "")
+
+    cmd = [
+        sys.executable, str(ns_history), "record", str(root), chapter_id,
+        "--type", task_type,
+        "--purpose", instruction or f"{task_type} for {chapter_id}",
+        "--result-file", str(output_path),
+        "--model", model,
+        "--model-api", api,
+        "--model-base-url", base_url,
+        "--model-temperature", str(temperature),
+        "--model-max-tokens", str(max_tokens),
+        "--work-mode", "direct",
+        "--input-chars", str(input_chars),
+        "--output-chars", str(len(content)),
+        "--elapsed-seconds", str(elapsed),
+        "--manifest-path", str(output_path.with_suffix(".manifest.json")),
+    ]
+    if provider:
+        cmd.extend(["--model-provider", provider])
+
+    try:
+        subprocess.run(cmd, capture_output=True, timeout=10)
+    except Exception:
+        pass  # history recording is best-effort
+
+
 def update_api_call_log(record: dict) -> None:
     """Append a record to the API call log, keeping last MAX_LOG_ENTRIES.
     The most recent FULL_DETAIL_KEEP records keep full detail; older ones are trimmed.
@@ -622,6 +675,17 @@ def main() -> int:
             output_path=str(output_path.relative_to(root)),
         )
         update_api_call_log(log_record)
+
+        # Record to creation history
+        _record_history(
+            root=root, chapter_id=chapter_id, prompt_profile=args.prompt_profile,
+            instruction=args.instruction, output_path=output_path, content=content,
+            model=model, api=api, base_url=base_url,
+            temperature=args.temperature, max_tokens=args.max_tokens,
+            input_chars=sum(item.chars for item in included),
+            elapsed=elapsed,
+            resolved_model_config=resolved_model_config,
+        )
         return 0
 
     except Exception as e:

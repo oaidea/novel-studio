@@ -80,8 +80,10 @@ NOVEL_STUDIO_README = """# .novel-studio
 - `chapter-meta.json`：章节元数据
 - chapter summary
 - chapter packet
-- active indexes
-- workflow logs
+- `indexes/`：active indexes
+- `history/`：创作历史记录，每次创作/润色/修改产生新内容时独立存档
+- `outputs/`：直连 API 生成输出
+- `logs/`：workflow logs
 - clip indexes / Clip 资产索引
 """
 
@@ -185,6 +187,8 @@ def main() -> int:
         root / ".novel-studio" / "summaries",
         root / ".novel-studio" / "packets",
         root / ".novel-studio" / "indexes",
+        root / ".novel-studio" / "history",
+        root / ".novel-studio" / "outputs",
         root / ".novel-studio" / "logs",
     ]
 

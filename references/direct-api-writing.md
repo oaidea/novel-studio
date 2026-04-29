@@ -40,7 +40,8 @@ NS 项目文件 → input pack → direct_api_writer.py → 指定模型 API →
 2. **密钥只走环境变量**：不把 API key 写进项目文件或日志。
 3. **输出旁路保存**：默认写入 `.novel-studio/outputs/`，不覆盖正文。
 4. **上下文可审计**：每次请求保存 manifest，记录实际带入哪些文件。
-5. **不自动发送真实请求**：真实 API 调用必须由操作者明确指定 `--execute`。
+5. **创作历史自动留档**：`--execute` 成功后自动写入 `<project>/.novel-studio/history/`，保存创作目的、模型信息和生成结果。
+6. **不自动发送真实请求**：真实 API 调用必须由操作者明确指定 `--execute`。
 
 ---
 
@@ -182,6 +183,12 @@ python3 scripts/direct_api_writer.py <project-dir> ch_005 \
 ```text
 .novel-studio/outputs/<chapter>-direct-api-<timestamp>.md
 .novel-studio/outputs/<chapter>-direct-api-<timestamp>.manifest.json
+```
+
+执行成功后还会自动写入创作历史：
+
+```text
+.novel-studio/history/<timestamp>_<chapter>_<type>_<id>.md
 ```
 
 manifest 记录：

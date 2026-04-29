@@ -1,6 +1,7 @@
 # Scripts Index
 
 当前脚本：
+- `scripts/ns_history.py`：管理创作历史记录（record/list/view/delete），每次产生新内容的操作自动记录创作目的、模型信息和生成结果
 - `scripts/init_novel_project.py`：初始化 layered / packet-first 项目骨架
 - `scripts/chapter_startup.py`：为新章节生成 packet 与启动清单骨架
 - `scripts/extract_project_style.py`：为项目生成母风格卡 scaffold

@@ -215,12 +215,31 @@ def main() -> int:
             project / ".novel-studio" / "indexes" / "active-characters.md",
             project / ".novel-studio" / "indexes" / "active-scenes.md",
             project / ".novel-studio" / "indexes" / "active-clips.md",
+            project / ".novel-studio" / "history",
+            project / ".novel-studio" / "outputs",
             project / "settings" / "subsettings" / "project-style-card.md",
             project / "chapters" / "retired",
         ]
 
         for path in expected:
             assert_exists(path)
+
+        # History recording smoke test
+        history_result = project / ".novel-studio" / "logs" / f"{chapter_id}-history-smoke-result.md"
+        history_result.write_text("# 测试生成结果\n\n这是一次创作历史 smoke 测试。\n", encoding="utf-8")
+        run(
+            str(SCRIPTS / "ns_history.py"), "record", str(project), chapter_id,
+            "--type", "write_chapter",
+            "--purpose", "smoke regression history record",
+            "--result-file", str(history_result),
+            "--model", "smoke-model",
+            "--work-mode", "system",
+        )
+        history_files = list((project / ".novel-studio" / "history").glob("*.md"))
+        if len(history_files) != 1:
+            raise AssertionError("history record should create exactly one .md file")
+        run(str(SCRIPTS / "ns_history.py"), "list", str(project), "--chapter", chapter_id)
+        run(str(SCRIPTS / "ns_history.py"), "view", str(project), history_files[0].stem)
 
         meta = json.loads((project / ".novel-studio" / "chapter-meta.json").read_text(encoding="utf-8"))
         if not meta.get("chapters"):
