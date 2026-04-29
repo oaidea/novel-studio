@@ -88,8 +88,8 @@ def inherited_model_config(provider_id: str, provider: dict, model: dict) -> dic
 
 def load_system_model(model_ref: str) -> dict | None:
     config_paths = [
-        Path("/root/.openclaw/agents/main/agent/models.json"),
         Path("/root/.openclaw/openclaw.json"),
+        Path("/root/.openclaw/agents/main/agent/models.json"),
     ]
     for cfg_path in config_paths:
         try:

@@ -24,8 +24,8 @@ import os
 import sys
 
 DEFAULT_CONFIG_PATHS = [
-    Path("/root/.openclaw/agents/main/agent/models.json"),
     Path("/root/.openclaw/openclaw.json"),
+    Path("/root/.openclaw/agents/main/agent/models.json"),
 ]
 SUPPORTED_API = {"openai-completions", "anthropic-messages"}
 KEY_ENV_PREFIX = "NOVEL_STUDIO_API_KEY_"
@@ -104,7 +104,7 @@ def discover() -> list[dict]:
                 effective_config = inherited_model_config(provider_id, provider, m)
                 api = effective_config.get("api", "")
                 full = f"{provider_id}/{model_id}"
-                key = (full, effective_config.get("baseUrl", ""), api)
+                key = full
                 if key in seen:
                     continue
                 seen.add(key)
