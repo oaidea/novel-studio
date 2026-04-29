@@ -6,13 +6,15 @@
 
 ## 定位
 
-Direct API Writing 是 Novel Studio 的**隔离写作执行层**：
+Direct API Writing 是 Novel Studio 的**隔离写作执行层**。凡是 NS 需要模型生成、判断或改写内容的任务，都必须使用项目内 direct API 配置，不允许直接借用当前聊天系统模型完成正文、审校、润色或风格判断。
 
 ```text
 NS 项目文件 → input pack → direct_api_writer.py → 指定模型 API → 输出到项目文件
 ```
 
 它不是替代 packet-first，而是 packet-first 的执行器。
+
+允许在未配置模型时运行的只有确定性文件工具，例如项目初始化、chapter-full/input-pack 生成、doctor、smoke、naming lint、consistency audit。它们不能生成正文判断，只能产出脚手架、索引、报告和文件状态。
 
 ---
 
