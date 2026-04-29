@@ -75,7 +75,7 @@ OUTLINE_NEXT_CHAPTERS = """# 近章规划\n\n## 当前近章目标\n- \n\n## 承
 NOVEL_STUDIO_README = """# .novel-studio
 
 这是项目的结构化工作内核，存放：
-- `config.json`：Novel Studio 项目级运行配置（如 directApi），不放 API key
+- Model 配置已全局化，不再在项目内保存；使用 `ns_model_config.py global set` 管理
 - `state.json`：小说项目状态
 - `chapter-meta.json`：章节元数据
 - chapter summary
@@ -85,11 +85,7 @@ NOVEL_STUDIO_README = """# .novel-studio
 - clip indexes / Clip 资产索引
 """
 
-CONFIG_TEMPLATE = {
-    "directApi": {
-        "systemModel": ""
-    },
-}
+# CONFIG_TEMPLATE removed — model config is now global. Projects no longer get config.json with directApi.
 
 ACTIVE_INDEX_PLACEHOLDER = """# {title}
 
@@ -233,7 +229,7 @@ def main() -> int:
     state = dict(STATE_TEMPLATE)
     state["project"] = root.name
     state["last_updated"] = today
-    ensure_json(root / ".novel-studio" / "config.json", CONFIG_TEMPLATE)
+    # config.json no longer created — model config is global (ns_model_config.py global set)
     ensure_json(root / ".novel-studio" / "state.json", state)
     ensure_json(root / ".novel-studio" / "chapter-meta.json", CHAPTER_META_TEMPLATE)
 

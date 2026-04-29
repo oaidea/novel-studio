@@ -6,7 +6,12 @@
 
 ## 定位
 
-Direct API Writing 是 Novel Studio 的**隔离写作执行层**。凡是 NS 需要模型生成、判断或改写内容的任务，都必须使用项目内 direct API 配置，不允许直接借用当前聊天系统模型完成正文、审校、润色或风格判断。
+Direct API Writing 是 Novel Studio 的**隔离写作执行层**。
+
+- **配置/调试指令永远走 OpenClaw 系统对话模型**
+- **创作/写作/修稿类任务受全局工作模式管辖**：
+  - `system`（系统模型模式）→ 走 OpenClaw 系统对话模型
+  - `direct`（直连模式）→ 走 direct API，不允许直接借用当前聊天系统模型完成正文、审校、润色或风格判断
 
 ```text
 NS 项目文件 → input pack → direct_api_writer.py → 指定模型 API → 输出到项目文件
@@ -52,6 +57,26 @@ NS 项目文件 → input pack → direct_api_writer.py → 指定模型 API →
 
 ## 配置方式
 
+### 工作模式
+
+Novel Studio 有两个全局工作模式，影响创作任务的行为：
+
+```bash
+# 查看当前模式
+python3 scripts/ns_model_config.py workmode show
+
+# 系统模型模式：所有任务走 OpenClaw 系统对话
+python3 scripts/ns_model_config.py workmode set system
+
+# 直连模式：创作/写作/修稿走 direct API（默认）
+python3 scripts/ns_model_config.py workmode set direct
+```
+
+**规则：**
+- 配置和调试指令（模型配置、查看 log、doctor 等）**永远走系统模型**
+- 创作/写作/修稿受 workMode 控制：`system` → 系统模型，`direct` → 直连 API
+- `direct_api_writer.py --execute` 在系统模型模式下会直接拒绝执行
+
 ### 从 OpenClaw 系统模型配置选择
 
 先列出当前系统模型：
@@ -60,24 +85,28 @@ NS 项目文件 → input pack → direct_api_writer.py → 指定模型 API →
 python3 scripts/ns_model_config.py list
 ```
 
-为某个小说项目初始化直连 API 配置：
+配置全局直连 API 模型（**不再需要项目级配置，全局一份即可**）：
 
 ```bash
-python3 scripts/ns_model_config.py init <project-dir>
+python3 scripts/ns_model_config.py global set
 ```
 
 也可以用 alias / full id / 序号非交互选择：
 
 ```bash
-python3 scripts/ns_model_config.py init <project-dir> --select LSJ --non-interactive
-python3 scripts/ns_model_config.py init <project-dir> --select lsj/gpt-5.5 --non-interactive
-python3 scripts/ns_model_config.py init <project-dir> --select 1 --non-interactive
+python3 scripts/ns_model_config.py global set --select LSJ --non-interactive
+python3 scripts/ns_model_config.py global set --select lsj/gpt-5.5 --non-interactive
+python3 scripts/ns_model_config.py global set --select 1 --non-interactive
 ```
 
-它会写入 `config.json` 的 `directApi` 字段：
+选中后会**自动验证模型连通性**（发送最小 API 请求）。验证失败则放弃导入，不保存配置。
+跳过验证：`--skip-validate`。
+
+它会写入 `.novel-studio/global-config.json` 的 `directApi` 字段：
 
 ```json
 {
+  "workMode": "direct",
   "directApi": {
     "systemModel": "lsj/gpt-5.5",
     "model": "gpt-5.5",
@@ -87,41 +116,19 @@ python3 scripts/ns_model_config.py init <project-dir> --select 1 --non-interacti
     "apiKeyEnv": "NOVEL_STUDIO_API_KEY_LSJ",
     "temperature": 0.7,
     "maxTokens": 131072,
-    "modelConfig": {
-      "provider": "lsj",
-      "baseUrl": "https://codex.ooooo.codes/v1",
-      "api": "openai-completions",
-      "id": "gpt-5.5",
-      "name": "GPT-5.5",
-      "reasoning": true,
-      "input": ["text", "image"],
-      "contextWindow": 1000000,
-      "maxTokens": 131072
-    },
-    "providerConfig": {
-      "baseUrl": "https://codex.ooooo.codes/v1",
-      "api": "openai-completions"
-    }
+    "modelConfig": { ... },
+    "providerConfig": { ... }
   }
 }
 ```
 
-注意：该文件会保存已验证可用的模型配置快照，**包括 apiKey**，并额外保存 `systemModel` 作为同步锚点。因此 `.novel-studio/config.json` 会被 `.novel-studio/.gitignore` 忽略；命令行展示和 manifest 会对 apiKey 脱敏。
+注意：该文件会保存已验证可用的模型配置快照，**包括 apiKey**。命令行展示和 manifest 会对 apiKey 脱敏。
 
-运行时不会只读取 `baseUrl` 这类少数字段，而是会引用系统模型条目的完整配置，例如：
+查看当前全局配置：
 
-```json
-{
-  "id": "deepseek-v4-flash",
-  "name": "DeepSeek-v4-Flash",
-  "reasoning": true,
-  "input": ["text", "image"],
-  "contextWindow": 1000000,
-  "maxTokens": 384000
-}
+```bash
+python3 scripts/ns_model_config.py global show
 ```
-
-这些完整字段会写入 config 的 `directApi.modelConfig`，也会写入 direct API manifest 的 `resolvedModelConfig`；provider 侧非密钥配置会写入 `providerConfig` / `resolvedProviderConfig`。如果系统模型配置变化，可运行 `sync` 用 `systemModel` 重新匹配并覆盖保存；如果同步失败，原 config 不变。
 
 ### 手动环境变量
 
@@ -133,7 +140,7 @@ export NOVEL_STUDIO_BASE_URL='https://api.example.com/v1'
 export NOVEL_STUDIO_MODEL='model-name'
 ```
 
-也可命令行覆盖；命令行参数优先于 `.novel-studio/config.json` 的 `directApi` 配置：
+也可命令行覆盖；命令行参数优先于 `.novel-studio/global-config.json` 的 `directApi` 配置：
 
 ```bash
 python3 scripts/direct_api_writer.py <project-dir> ch_005 \
@@ -191,41 +198,33 @@ python3 scripts/workflow_runner.py <project-dir> ch_005 chapter-full
 
 ### 2. dry-run 预览请求
 
-如果项目尚未配置模型，先运行：
+如果尚未配置全局直连模型，先运行：
 
 ```bash
-python3 scripts/ns_model_config.py init <project-dir>
+python3 scripts/ns_model_config.py global set
 ```
 
-没有 `.novel-studio/config.json` 的 `directApi` 配置且未显式传入 `--model` + `--base-url` 时，direct writer 会直接退出并提示配置模型，不生成 `MODEL_NOT_SET` 请求。
+没有 `.novel-studio/global-config.json` 的 `directApi` 配置且未显式传入 `--model` + `--base-url` 时，direct writer 会直接退出并提示配置模型。
 
 ```bash
 python3 scripts/direct_api_writer.py <project-dir> ch_005 --dry-run
 ```
 
-### 3. 校验配置模型是否仍存在
+### 3. 查看和重配模型
 
-如果 OpenClaw 系统模型 ID 变更或被删除，NS 会报错并要求重新选择。也可以手动校验：
-
-```bash
-python3 scripts/ns_model_config.py validate <project-dir>
-```
-
-同步系统模型配置快照：
+查看当前全局直连 API 配置：
 
 ```bash
-python3 scripts/ns_model_config.py sync <project-dir>
+python3 scripts/ns_model_config.py global show
 ```
 
-`sync` 成功时会用 `systemModel` 从系统配置重新匹配并覆盖保存；失败时不改变原 config。
-
-校验失败时，重新运行：
+如需更换直连模型，重新运行：
 
 ```bash
-python3 scripts/ns_model_config.py init <project-dir>
+python3 scripts/ns_model_config.py global set
 ```
 
-### 3. 明确执行真实请求
+### 4. 明确执行真实请求
 
 ```bash
 python3 scripts/direct_api_writer.py <project-dir> ch_005 --execute

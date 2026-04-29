@@ -37,6 +37,7 @@ SUPPORTED_API = {"openai-completions", "anthropic-messages"}
 API_CALL_LOG_FILE = "api-calls.json"
 MAX_LOG_ENTRIES = 100
 FULL_DETAIL_KEEP = 10
+GLOBAL_CONFIG_PATH = Path(__file__).resolve().parent.parent / ".novel-studio" / "global-config.json"
 
 
 def skill_root() -> Path:
@@ -59,8 +60,7 @@ def read_text(path: Path) -> str:
     return path.read_text(encoding="utf-8")
 
 
-def project_config_path(root: Path) -> Path:
-    return root / ".novel-studio" / "config.json"
+# project_config_path removed — model config is now global only.
 
 
 def providers_from_config(data: dict) -> dict:
@@ -135,18 +135,32 @@ def env_name_for(provider: str) -> str:
     return "NOVEL_STUDIO_API_KEY_" + safe
 
 
-def read_project_direct_api(root: Path) -> tuple[dict | None, Path]:
-    cfg_path = project_config_path(root)
-    if not cfg_path.exists():
-        return None, cfg_path
-    try:
-        cfg = json.loads(cfg_path.read_text(encoding="utf-8"))
-        direct = cfg.get("directApi")
-        if isinstance(direct, dict):
-            return direct, cfg_path
-    except Exception:
-        pass
-    return None, cfg_path
+# read_project_direct_api removed — model config is now global only.
+
+
+def read_global_direct_api() -> tuple[dict | None, Path]:
+    """Read the Novel Studio global direct API config (default for projects
+    without their own config)."""
+    if GLOBAL_CONFIG_PATH.exists():
+        try:
+            cfg = json.loads(GLOBAL_CONFIG_PATH.read_text(encoding="utf-8"))
+            direct = cfg.get("directApi")
+            if isinstance(direct, dict):
+                return direct, GLOBAL_CONFIG_PATH
+        except Exception:
+            pass
+    return None, GLOBAL_CONFIG_PATH
+
+
+def _read_full_global_config() -> tuple[dict | None, Path]:
+    """Read the full Novel Studio global config (including workMode)."""
+    if GLOBAL_CONFIG_PATH.exists():
+        try:
+            cfg = json.loads(GLOBAL_CONFIG_PATH.read_text(encoding="utf-8"))
+            return cfg, GLOBAL_CONFIG_PATH
+        except Exception:
+            pass
+    return None, GLOBAL_CONFIG_PATH
 
 
 def redact_secrets(value):
@@ -423,7 +437,7 @@ def present_error_recovery(
     full_current = current_model
     # Try to build full provider/model ref if short
     if "/" not in full_current and "'system_model'" not in current_model:
-        direct_cfg, _ = read_project_direct_api(root)
+        direct_cfg, _ = read_global_direct_api()
         if direct_cfg and direct_cfg.get("systemModel"):
             full_current = direct_cfg["systemModel"]
 
@@ -439,7 +453,7 @@ def present_error_recovery(
     err_str = str(error).lower()
     suggestions: list[str] = []
     if "401" in err_str or "403" in err_str or "unauthorized" in err_str or "invalid api key" in err_str:
-        suggestions.append("💡 API Key 可能无效或过期，请检查环境变量或项目 config.json")
+        suggestions.append("💡 API Key 可能无效或过期，请检查环境变量或全局 global-config.json")
     if "404" in err_str or "not found" in err_str:
         suggestions.append("💡 模型名称或 Base URL 可能不正确")
     if "429" in err_str or "rate" in err_str or "quota" in err_str:
@@ -497,33 +511,7 @@ def present_error_recovery(
         print(f"  无效选择: {choice}", file=sys.stderr)
 
 
-def write_direct_api_config(root: Path, model_info: dict) -> Path:
-    """Write or update the project's directApi config with a new model selection."""
-    ns = root / ".novel-studio"
-    ns.mkdir(parents=True, exist_ok=True)
-    config_path = project_config_path(root)
-    config = {}
-    if config_path.exists():
-        try:
-            config = json.loads(config_path.read_text(encoding="utf-8"))
-        except Exception:
-            config = {}
-    prev = config.get("directApi") or {}
-    config["directApi"] = {
-        "systemModel": model_info["full"],
-        "model": model_info["model"],
-        "api": model_info["api"],
-        "baseUrl": model_info["baseUrl"],
-        "apiKey": model_info.get("apiKey") or prev.get("apiKey") or "",
-        "apiKeyEnv": model_info.get("apiKeyEnv") or prev.get("apiKeyEnv") or env_name_for(model_info["provider"]),
-        "temperature": prev.get("temperature", 0.7),
-        "maxTokens": prev.get("maxTokens") or model_info.get("maxTokens") or 6000,
-        "modelConfig": model_info.get("modelConfig"),
-        "providerConfig": model_info.get("providerConfig"),
-        "source": model_info.get("source", ""),
-    }
-    config_path.write_text(json.dumps(config, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    return config_path
+# write_direct_api_config removed — model config is now global only.
 
 
 def update_api_call_log(record: dict) -> None:
@@ -590,17 +578,18 @@ def main() -> int:
     base_url = args.base_url
     model = args.model
     api_key_env = args.api_key_env
-    direct_cfg, cfg_source = read_project_direct_api(root)
+    # Model config is now GLOBAL only — all projects share one config.
+    direct_cfg, cfg_source = read_global_direct_api()
     has_project_config = direct_cfg is not None
     system_model = None
     if has_project_config:
         if not direct_cfg.get("systemModel"):
             print(f"direct API config is missing systemModel: {cfg_source}", file=sys.stderr)
-            print(f"hint: run scripts/ns_model_config.py init {root}", file=sys.stderr)
+            print(f"hint: run scripts/ns_model_config.py global set", file=sys.stderr)
             return 2
         if direct_cfg.get("api") not in SUPPORTED_API:
             print(f"configured model is not direct-API compatible: {direct_cfg.get('systemModel')} (api={direct_cfg.get('api')})", file=sys.stderr)
-            print(f"hint: run scripts/ns_model_config.py init {root}", file=sys.stderr)
+            print(f"hint: run scripts/ns_model_config.py global set", file=sys.stderr)
             return 2
         system_model = {
             "provider": (direct_cfg.get("modelConfig") or {}).get("provider", ""),
@@ -621,7 +610,7 @@ def main() -> int:
             args.max_tokens = int(direct_cfg.get("maxTokens"))
     if not model or not base_url:
         print("direct API model is not configured for this project.", file=sys.stderr)
-        print(f"hint: run scripts/ns_model_config.py init {root}", file=sys.stderr)
+        print(f"hint: run scripts/ns_model_config.py global set", file=sys.stderr)
         print("or pass both --model and --base-url explicitly.", file=sys.stderr)
         if has_project_config:
             print(f"config exists but is incomplete: {cfg_source}", file=sys.stderr)
@@ -644,6 +633,20 @@ def main() -> int:
     resolved_model_config = system_model.get("modelConfig") if 'system_model' in locals() and system_model else None
     resolved_provider_config = system_model.get("providerConfig") if 'system_model' in locals() and system_model else None
     api = (resolved_model_config or {}).get("api") or (system_model.get("api") if 'system_model' in locals() and system_model else "openai-completions")
+
+    # --- Work mode check ---
+    full_cfg, _ = _read_full_global_config()
+    work_mode = "direct"
+    if full_cfg and full_cfg.get("workMode") in ("system", "direct"):
+        work_mode = full_cfg["workMode"]
+    if args.execute and work_mode == "system":
+        print("=" * 55, file=sys.stderr)
+        print("⚠️  当前工作模式为「系统模型」，直连 API 不可用。", file=sys.stderr)
+        print("   只有创作/写作/修稿任务在「直连模式」下才走 API。", file=sys.stderr)
+        print("   切换: python3 scripts/ns_model_config.py workmode set direct", file=sys.stderr)
+        print("=" * 55, file=sys.stderr)
+        return 4
+
     if api == "openai-completions":
         payload = {
             "model": model,
@@ -848,7 +851,7 @@ def main() -> int:
                 return 3
 
             if recovery.get("__save_config__"):
-                print(f"💾 已保存当前配置到 {project_config_path(root)}", file=sys.stderr)
+                print(f"💾 已保存当前配置（跳过本次）", file=sys.stderr)
                 return 3
 
             # Switch model and retry
