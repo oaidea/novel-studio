@@ -161,7 +161,8 @@ def main() -> int:
     model = args.model
     api_key_env = args.api_key_env
     project_cfg = root / ".novel-studio" / "direct-api-config.json"
-    if project_cfg.exists():
+    has_project_config = project_cfg.exists()
+    if has_project_config:
         try:
             cfg = json.loads(project_cfg.read_text(encoding="utf-8"))
             base_url = base_url or cfg.get("baseUrl", "")
@@ -173,6 +174,14 @@ def main() -> int:
                 args.max_tokens = int(cfg.get("maxTokens"))
         except Exception as e:
             print(f"warning: failed to read direct API config: {e}", file=sys.stderr)
+    if not model or not base_url:
+        print("direct API model is not configured for this project.", file=sys.stderr)
+        print(f"hint: run scripts/ns_model_config.py init {root}", file=sys.stderr)
+        print("or pass both --model and --base-url explicitly.", file=sys.stderr)
+        if has_project_config:
+            print(f"config exists but is incomplete: {project_cfg}", file=sys.stderr)
+        return 2
+
     api_key = os.environ.get(api_key_env, "")
     execute = bool(args.execute)
 
@@ -188,7 +197,7 @@ def main() -> int:
 
     messages = build_messages(chapter_id, project_name, included, args.prompt_profile, args.instruction)
     payload = {
-        "model": model or "MODEL_NOT_SET",
+        "model": model,
         "messages": messages,
         "temperature": args.temperature,
         "max_tokens": args.max_tokens,

@@ -137,6 +137,14 @@ python3 scripts/workflow_runner.py <project-dir> ch_005 chapter-full
 
 ### 2. dry-run 预览请求
 
+如果项目尚未配置模型，先运行：
+
+```bash
+python3 scripts/ns_model_config.py init <project-dir>
+```
+
+没有 `.novel-studio/direct-api-config.json` 且未显式传入 `--model` + `--base-url` 时，direct writer 会直接退出并提示配置模型，不生成 `MODEL_NOT_SET` 请求。
+
 ```bash
 python3 scripts/direct_api_writer.py <project-dir> ch_005 --dry-run
 ```
