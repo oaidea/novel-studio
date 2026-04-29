@@ -33,6 +33,7 @@ import time
 DEFAULT_API_KEY_ENV = "NOVEL_STUDIO_API_KEY"
 DEFAULT_BASE_URL_ENV = "NOVEL_STUDIO_BASE_URL"
 DEFAULT_MODEL_ENV = "NOVEL_STUDIO_MODEL"
+SUPPORTED_API = {"openai-completions"}
 
 
 @dataclass
@@ -85,13 +86,16 @@ def load_system_model(model_ref: str) -> dict | None:
                 full = f"{provider_id}/{m['id']}"
                 if model_ref not in {full, m["id"]}:
                     continue
+                model_config = dict(m)
+                model_config["api"] = m.get("api") or provider_api
                 return {
                     "provider": provider_id,
                     "model": m["id"],
                     "modelFull": full,
                     "baseUrl": base_url,
                     "api": m.get("api") or provider_api,
-                    "maxTokens": m.get("maxTokens"),
+                    "modelConfig": model_config,
+                    "providerConfig": {k: v for k, v in provider.items() if k not in {"apiKey", "models"}},
                     "source": str(cfg_path),
                 }
     return None
@@ -238,10 +242,15 @@ def main() -> int:
                 print("hint: run scripts/ns_model_config.py list", file=sys.stderr)
                 print(f"then run scripts/ns_model_config.py init {root}", file=sys.stderr)
                 return 2
+            if system_model.get("api") not in SUPPORTED_API:
+                print(f"configured model exists but is not direct-API compatible: {configured_model} (api={system_model.get('api')})", file=sys.stderr)
+                print(f"hint: run scripts/ns_model_config.py init {root}", file=sys.stderr)
+                return 2
             model = system_model["model"]
             base_url = base_url or system_model.get("baseUrl", "")
-            if args.max_tokens == 6000 and system_model.get("maxTokens") is not None:
-                args.max_tokens = min(int(system_model.get("maxTokens") or 6000), args.max_tokens)
+            model_cfg = system_model.get("modelConfig") or {}
+            if args.max_tokens == 6000 and model_cfg.get("maxTokens") is not None:
+                args.max_tokens = int(model_cfg.get("maxTokens") or 6000)
             if args.api_key_env == DEFAULT_API_KEY_ENV:
                 api_key_env = direct_cfg.get("apiKeyEnv") or env_name_for(system_model["provider"])
         base_url = base_url or direct_cfg.get("baseUrl", "")
@@ -273,6 +282,8 @@ def main() -> int:
             pass
 
     messages = build_messages(chapter_id, project_name, included, args.prompt_profile, args.instruction)
+    resolved_model_config = system_model.get("modelConfig") if 'system_model' in locals() and system_model else None
+    resolved_provider_config = system_model.get("providerConfig") if 'system_model' in locals() and system_model else None
     payload = {
         "model": model,
         "messages": messages,
@@ -299,6 +310,9 @@ def main() -> int:
         "includedFiles": [{"path": item.rel, "chars": item.chars} for item in included],
         "promptProfile": args.prompt_profile,
         "model": payload["model"],
+        "configuredModel": direct_cfg.get("model") if isinstance(direct_cfg, dict) else None,
+        "resolvedModelConfig": resolved_model_config,
+        "resolvedProviderConfig": resolved_provider_config,
         "baseUrl": base_url.rstrip("/") if base_url else "BASE_URL_NOT_SET",
         "apiKeyEnv": api_key_env,
         "execute": execute,

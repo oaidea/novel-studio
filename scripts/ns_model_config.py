@@ -86,6 +86,8 @@ def discover() -> list[dict]:
                     continue
                 seen.add(key)
                 supported = api in SUPPORTED_API and "image" not in str(model_id).lower()
+                model_config = dict(m)
+                model_config["api"] = api
                 rows.append({
                     "full": full,
                     "provider": provider_id,
@@ -97,6 +99,8 @@ def discover() -> list[dict]:
                     "supportedDirectApi": supported,
                     "contextWindow": m.get("contextWindow"),
                     "maxTokens": m.get("maxTokens"),
+                    "modelConfig": model_config,
+                    "providerConfig": {k: v for k, v in provider.items() if k not in {"apiKey", "models"}},
                     "source": str(cfg),
                 })
     # Prefer supported OpenAI-compatible models first, then stable display order.
@@ -212,6 +216,8 @@ def validate_project(root: Path) -> int:
         "resolvedModel": matched["full"],
         "baseUrl": matched.get("baseUrl", ""),
         "api": matched.get("api", ""),
+        "modelConfig": matched.get("modelConfig"),
+        "providerConfig": matched.get("providerConfig"),
     }, ensure_ascii=False, indent=2))
     return 0
 

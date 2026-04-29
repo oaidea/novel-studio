@@ -75,6 +75,21 @@ python3 scripts/ns_model_config.py init <project-dir> --select 1 --non-interacti
 
 注意：该文件**不复制 OpenClaw 的 API key**，只记录 model（必要）和少量覆盖项（如 temperature/maxTokens/apiKeyEnv）。真实执行前仍需 export 对应环境变量。
 
+运行时不会只读取 `baseUrl` 这类少数字段，而是会引用系统模型条目的完整配置，例如：
+
+```json
+{
+  "id": "deepseek-v4-flash",
+  "name": "DeepSeek-v4-Flash",
+  "reasoning": true,
+  "input": ["text", "image"],
+  "contextWindow": 1000000,
+  "maxTokens": 384000
+}
+```
+
+这些完整字段会写入 direct API manifest 的 `resolvedModelConfig`，provider 侧非密钥配置会写入 `resolvedProviderConfig`。如果系统模型配置变化，下一次运行会使用最新配置；如果模型 ID 消失，则报错要求重新选择。
+
 ### 手动环境变量
 
 推荐使用环境变量：
