@@ -12,6 +12,8 @@
 - `scripts/style_check.py`：为单章生成风格一致性检查 scaffold
 - `scripts/camera_follow_check.py`：轻量检查镜头跟随叙述风险（抽象气氛词、上帝视角抢跑、感知锚点不足、疑似 POV 发散）
 - `scripts/observer_description_check.py`：轻量检查第三方描述风险（作者硬夸、群体尬吹、信息越权、缺少具体反应）
+- `scripts/scene_tension_check.py`：轻量检查场景张力风险（阻力/代价不足、对白空转、纯气氛静态段）
+- `scripts/information_release_check.py`：轻量检查信息释放风险（解释腔、真相/机制词过密、已知信息对白）
 - `scripts/governance_audit.py`：审计 layered 项目是否存在治理漂移（目录缺失、state/meta 漏项、入口引用失效等）
 - `scripts/consistency_audit.py`：审计 state / chapter-meta / chapter files / packet-first 产物是否互相一致
 - `scripts/naming_lint.py`：审计文件命名是否出现状态塞进文件名、final-v2 漂移、对象区非 kebab-case 等命名坏味道

@@ -48,6 +48,8 @@
 10. **项目治理模式**：整理小说项目结构、拆分设定层级、建立对象卡、变化记录、命名规范与入口层级
 11. **镜头跟随模式**：为章节 / 场景建立 POV 跟随、感知顺序、镜头锚点与信息边界，检查上帝视角抢跑和镜头乱跳
 12. **第三方描述模式**：通过旁观者、敌人、熟人、群众、传闻、组织评估等侧面视角呈现人物特质、事件后果与社会回声
+13. **场景张力模式**：为单场戏建立主动方、目标、阻力、代价、加码点和不可逆变化，防止空转对白和纯气氛段
+14. **信息释放模式**：控制章节设定、真相、线索、伏笔、误导的释放顺序与载体，防止提前泄底和解释腔
 
 **默认规则：**
 - 不跨模式乱跳。
@@ -58,6 +60,8 @@
 - 若用户要“整理小说项目 / 清理仓库结构 / 把设定和卡片分层 / 建变化记录 / 统一命名规范 / 做创作工作室逻辑”，进入**项目治理模式**。
 - 若用户要“镜头跟随 / 视角跟随 / POV 检查 / 镜头别乱跳 / 让读者跟人物一起发现 / 不要上帝视角抢跑”，进入**镜头跟随模式**。
 - 若用户要“第三方描述 / 旁观者描述 / 侧面描写 / 用别人反应衬托 / 敌人评估 / 传闻发酵 / 不要作者硬夸”，进入**第三方描述模式**。
+- 若用户要“场景张力 / 这场戏不够紧 / 对白空转 / 冲突不够 / 代价不够 / 场景没推进”，进入**场景张力模式**。
+- 若用户要“信息释放 / 设定别讲太多 / 不要解释腔 / 控制伏笔 / 别提前泄底 / 线索怎么放”，进入**信息释放模式**。
 - 若用户要“确定章节框架后尽量不回读前文全文 / 用卡片和摘要来写 / 降低 token 消耗”，进入**chapter packet / packet-first 写作策略**。
 - 若用户要“先根据上一章来推测下一章会出现的人物、空间、时间、事件，再制定本章目的与框架”，也进入**chapter packet / packet-first 写作策略**。
 - 若用户要“为单个小说项目建立统一写作风格卡 / 避免章节风格脱离整部作品”，进入**项目风格卡策略**。
@@ -407,6 +411,8 @@ novels/<项目名>/
 - `scripts/style_check.py`：为单章生成风格一致性检查 scaffold
 - `scripts/camera_follow_check.py`：轻量检查镜头跟随叙述风险（抽象气氛词、上帝视角抢跑、感知锚点不足、疑似 POV 发散）
 - `scripts/observer_description_check.py`：轻量检查第三方描述风险（作者硬夸、群体尬吹、信息越权、缺少具体反应）
+- `scripts/scene_tension_check.py`：轻量检查场景张力风险（阻力/代价不足、对白空转、纯气氛静态段）
+- `scripts/information_release_check.py`：轻量检查信息释放风险（解释腔、真相/机制词过密、已知信息对白）
 - `scripts/workflow_runner.py`：串行触发最小 workflow chain（支持 startup / style / style-full / chapter-full / writeback / refresh / deps / deps-all / doctor / full 模式）
 
 ---
@@ -623,6 +629,8 @@ novels/<项目名>/
 - “这章有没有 bug” → 审校模式
 - “镜头跟着主角走 / 检查 POV / 不要上帝视角 / 让读者跟人物一起发现” → 镜头跟随模式
 - “用旁人反应衬托 / 第三方描述 / 侧面描写 / 敌人怎么看他 / 传闻怎么发酵” → 第三方描述模式
+- “这场戏没张力 / 对白空转 / 冲突不够 / 代价不够 / 场景没推进” → 场景张力模式
+- “设定别讲太多 / 控制信息释放 / 不要解释腔 / 别提前泄底 / 线索怎么放” → 信息释放模式
 - “把这段改得自然点” → 润色模式
 - “帮我做写作学习计划 / 我现在最该学什么” → 学习模式
 - “帮我拆《三体》风格 / 做成风格卡 / 存进风格库 / 生成风格提示词” → 风格库模式
@@ -660,6 +668,10 @@ novels/<项目名>/
 - `references/templates/camera-follow-task-template.md`：镜头跟随任务书模板
 - `references/observer-description.md`：第三方描述规则（旁观者、敌人、熟人、群众、权威视角与侧面描写审校清单）
 - `references/templates/observer-description-task-template.md`：第三方描述任务书模板
+- `references/scene-tension-management.md`：场景张力管理规则（主动方、目标、阻力、代价、加码、不可逆变化）
+- `references/templates/scene-tension-task-template.md`：场景张力任务书模板
+- `references/information-release-control.md`：信息释放控制规则（信息分层、释放载体、误导、伏笔状态）
+- `references/templates/information-release-task-template.md`：信息释放任务书模板
 - `references/faction-naming-guide.md`：派/帮/教/宗/门组织命名规则卡
 - `references/writing-study-plan.md`：写作学习计划与训练模式参考
 - `references/style-library-index.md`：风格库索引
