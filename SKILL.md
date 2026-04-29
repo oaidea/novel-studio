@@ -40,7 +40,7 @@
 
 | 指令 | 效果 |
 |------|------|
-| **配置模型** | 强制进入模型配置模式,列出系统可用模型,选择直连 API 用的模型并验证连通性 |
+| **配置模型** | 强制进入模型配置模式，列出系统可用模型，可选「系统导入」或「手动配置」并验证连通性 |
 | **系统模型** | 切换为系统模型模式:所有 NS 任务(含创作)都走 OpenClaw 系统对话模型 |
 | **直连模式** | 切换为 API 直连模式:创作/写作/修稿走 direct API;配置/调试仍走系统模型 |
 
@@ -715,7 +715,7 @@ novels/<项目名>/
 - `references/templates/scene-tension-task-template.md`:场景张力任务书模板
 - `references/information-release-control.md`:信息释放控制规则(信息分层、释放载体、误导、伏笔状态)
 - `references/templates/information-release-task-template.md`:信息释放任务书模板
-- `references/direct-api-writing.md`：直连 API 写作通道说明（配置、dry-run、execute、manifest、输出位置、workMode 检查；模型配置走全局：`scripts/ns_model_config.py global set`）
+- `references/direct-api-writing.md`:直连 API 写作通道说明(配置、dry-run、execute、manifest、输出位置、workMode 检查;模型配置走全局:`scripts/ns_model_config.py global set`)
 - `references/faction-naming-guide.md`:派/帮/教/宗/门组织命名规则卡
 - `references/writing-study-plan.md`:写作学习计划与训练模式参考
 - `references/style-library-index.md`:风格库索引

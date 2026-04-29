@@ -322,7 +322,143 @@ def validate_model_connectivity(row: dict, timeout: int = 15) -> tuple[bool, str
         return False, f"连接失败: {str(e)[:200]}"
 
 
-def set_global(select: str | None, non_interactive: bool, api_key_env: str | None, skip_validate: bool = False) -> int:
+def _prompt_config_mode(row: dict, non_interactive: bool, custom_mode: bool) -> str:
+    """Ask user: import from system or manual config.
+    Returns 'import' or 'custom'."""
+    if custom_mode:
+        return "custom"
+    if non_interactive:
+        return "import"
+    print()
+    print(f"已选择: {row['full']} ({row.get('name', '')})")
+    print(f"  baseUrl: {row.get('baseUrl', 'N/A')}")
+    print(f"  api:     {row.get('api', 'N/A')}")
+    print()
+    print("配置方式:")
+    print("  1. 系统导入 — 直接从 OpenClaw 系统配置导入（baseUrl/apiKey 等自动填入）")
+    print("  2. 手动配置 — 自行输入 baseUrl、apiKey、API 格式、上下文长度等")
+    print()
+    try:
+        choice = input("选择 [1/2] (默认 1): ").strip()
+    except EOFError:
+        choice = ""
+    if choice == "2":
+        return "custom"
+    return "import"
+
+
+def _interactive_custom_config(row: dict) -> dict:
+    """Prompt user for manual model config fields."""
+    print()
+    print("═══ 手动配置直连 API 模型 ═══")
+    print()
+
+    # baseUrl
+    default_url = row.get("baseUrl", "")
+    prompt = f"baseUrl [{default_url}]: "
+    try:
+        base_url = input(prompt).strip()
+    except EOFError:
+        base_url = ""
+    if not base_url:
+        base_url = default_url
+
+    # API protocol
+    default_api = row.get("api", "openai-completions")
+    print()
+    print("API 协议:")
+    print("  1. openai-completions  → POST /chat/completions")
+    print("  2. anthropic-messages  → POST /messages")
+    try:
+        api_choice = input(f"选择 [1/2] (默认 {'1' if default_api == 'openai-completions' else '2'}): ").strip()
+    except EOFError:
+        api_choice = ""
+    if api_choice == "2":
+        api = "anthropic-messages"
+    elif api_choice == "1":
+        api = "openai-completions"
+    else:
+        api = default_api
+
+    # apiKey
+    default_key = (row.get("providerConfig") or {}).get("apiKey", "")
+    print()
+    try:
+        key_input = input(f"apiKey [{default_key[:8]}... 回车沿用]: ").strip()
+    except EOFError:
+        key_input = ""
+    api_key = key_input if key_input else default_key
+
+    # model ID
+    default_model = row.get("model", "")
+    try:
+        model_input = input(f"model ID [{default_model}]: ").strip()
+    except EOFError:
+        model_input = ""
+    model_id = model_input if model_input else default_model
+
+    # contextWindow
+    default_ctx = row.get("contextWindow")
+    ctx_prompt = f"上下文窗口 [{default_ctx}]: " if default_ctx else "上下文窗口 (留空跳过): "
+    try:
+        ctx_input = input(ctx_prompt).strip()
+    except EOFError:
+        ctx_input = ""
+    context_window = int(ctx_input) if ctx_input else default_ctx
+
+    # maxTokens
+    default_max = row.get("maxTokens")
+    max_prompt = f"maxTokens [{default_max}]: " if default_max else "maxTokens (留空跳过): "
+    try:
+        max_input = input(max_prompt).strip()
+    except EOFError:
+        max_input = ""
+    max_tokens = int(max_input) if max_input else default_max
+
+    # temperature
+    try:
+        temp_input = input("temperature [0.7]: ").strip()
+    except EOFError:
+        temp_input = ""
+    temperature = float(temp_input) if temp_input else 0.7
+
+    print()
+
+    provider = row.get("provider", "custom")
+    full_id = f"{provider}/{model_id}"
+
+    return {
+        "full": full_id,
+        "provider": provider,
+        "model": model_id,
+        "name": model_id,
+        "alias": "",
+        "baseUrl": base_url,
+        "api": api,
+        "supportedDirectApi": True,
+        "contextWindow": context_window,
+        "maxTokens": max_tokens,
+        "modelConfig": {
+            "provider": provider,
+            "id": model_id,
+            "name": model_id,
+            "baseUrl": base_url,
+            "api": api,
+            "contextWindow": context_window,
+            "maxTokens": max_tokens,
+        },
+        "providerConfig": {
+            "apiKey": api_key,
+            "baseUrl": base_url,
+            "api": api,
+        },
+        "source": "manual",
+        "_custom_temperature": temperature,
+    }
+
+
+def set_global(select: str | None, non_interactive: bool, api_key_env: str | None,
+               skip_validate: bool = False, custom: bool = False) -> int:
     rows = discover()
     if select or non_interactive:
         row = resolve_selection(rows, select)
@@ -331,10 +467,21 @@ def set_global(select: str | None, non_interactive: bool, api_key_env: str | Non
     if not row:
         print("no model selected", file=sys.stderr)
         return 1
-    ok, reason = ensure_supported(row)
-    if not ok:
-        print(f"selected model is not usable for direct API: {row.get('full') if row else ''}; {reason}", file=sys.stderr)
-        return 2
+
+    # --- Choose config mode: import vs custom ---
+    config_mode = _prompt_config_mode(row, non_interactive, custom)
+
+    if config_mode == "custom":
+        row = _interactive_custom_config(row)
+        custom_temp = row.pop("_custom_temperature", 0.7)
+
+    # Validate support (only for imported models; custom ones are assumed supported)
+    if config_mode == "import":
+        ok, reason = ensure_supported(row)
+        if not ok:
+            print(f"selected model is not usable for direct API: {row.get('full') if row else ''}; {reason}", file=sys.stderr)
+            return 2
+
     GLOBAL_CONFIG_DIR.mkdir(parents=True, exist_ok=True)
     existing = {}
     if GLOBAL_CONFIG_PATH.exists():
@@ -345,21 +492,32 @@ def set_global(select: str | None, non_interactive: bool, api_key_env: str | Non
 
     # --- Validation step ---
     if not skip_validate:
-        print(f"🔍 正在验证模型连通性: {row['full']} ...", file=sys.stderr)
+        if config_mode == "custom":
+            print(f"🔍 正在验证手动配置连通性 ...", file=sys.stderr)
+        else:
+            print(f"🔍 正在验证模型连通性: {row['full']} ...", file=sys.stderr)
         print(f"   baseUrl: {row.get('baseUrl', 'N/A')}", file=sys.stderr)
         valid, vmsg = validate_model_connectivity(row)
         if not valid:
             print(f"❌ 验证失败: {vmsg}", file=sys.stderr)
-            print(f"   配置导入已放弃，未保存任何更改。", file=sys.stderr)
+            print(f"   配置已放弃，未保存任何更改。", file=sys.stderr)
             print(f"   提示: 可换一个模型重试，或用 --skip-validate 跳过验证。", file=sys.stderr)
             return 2
         print(f"✅ 验证通过: {vmsg}", file=sys.stderr)
     else:
         print(f"⚠️  已跳过连通性验证 (--skip-validate)", file=sys.stderr)
 
-    existing["directApi"] = build_direct_api_config(row, api_key_env, previous=existing.get("directApi"))
+    previous = existing.get("directApi")
+    if config_mode == "custom":
+        existing["directApi"] = build_direct_api_config(row, api_key_env, previous=previous)
+        if custom_temp is not None:
+            existing["directApi"]["temperature"] = custom_temp
+    else:
+        existing["directApi"] = build_direct_api_config(row, api_key_env, previous=previous)
+
     write_global_config(existing)
-    print(f"wrote global direct API config: {GLOBAL_CONFIG_PATH}")
+    mode_label = "手动配置" if config_mode == "custom" else "系统导入"
+    print(f"wrote global direct API config ({mode_label}): {GLOBAL_CONFIG_PATH}")
     print(f"selected: {row['full']}")
     print(f"api key env: {api_key_env or env_name_for(row['provider'])}")
     return 0
@@ -435,6 +593,8 @@ def main() -> int:
     p_global_set.add_argument("--api-key-env", default=None)
     p_global_set.add_argument("--skip-validate", action="store_true",
                               help="skip connectivity validation after selection")
+    p_global_set.add_argument("--custom", action="store_true",
+                              help="manual config mode: enter baseUrl/apiKey/etc. instead of importing from system")
     p_global_sub.add_parser("show")
     p_global_sub.add_parser("remove")
     # --- workmode commands ---
@@ -449,7 +609,7 @@ def main() -> int:
     if args.cmd == "global":
         if args.global_cmd == "set":
             return set_global(args.select, args.non_interactive, args.api_key_env,
-                            skip_validate=args.skip_validate)
+                            skip_validate=args.skip_validate, custom=args.custom)
         if args.global_cmd == "show":
             return show_global()
         if args.global_cmd == "remove":

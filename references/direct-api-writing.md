@@ -99,8 +99,18 @@ python3 scripts/ns_model_config.py global set --select lsj/gpt-5.5 --non-interac
 python3 scripts/ns_model_config.py global set --select 1 --non-interactive
 ```
 
-选中后会**自动验证模型连通性**（发送最小 API 请求）。验证失败则放弃导入，不保存配置。
+选中后会提示选择配置方式：
+- **系统导入**：直接从 OpenClaw 系统配置导入（baseUrl/apiKey 等自动填入）
+- **手动配置**：自行输入 baseUrl、apiKey、API 格式、上下文长度、maxTokens、temperature
+
+然后**自动验证模型连通性**（发送最小 API 请求）。验证失败则放弃导入，不保存配置。
 跳过验证：`--skip-validate`。
+
+非交互式指定手动配置：
+
+```bash
+python3 scripts/ns_model_config.py global set --select 1 --non-interactive --custom
+```
 
 它会写入 `.novel-studio/global-config.json` 的 `directApi` 字段：
 
