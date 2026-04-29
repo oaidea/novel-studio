@@ -141,6 +141,14 @@ def read_project_direct_api(root: Path) -> tuple[dict | None, Path]:
     return None, cfg_path
 
 
+def redact_secrets(value):
+    if isinstance(value, dict):
+        return {k: ("***" if k.lower() == "apikey" and v else redact_secrets(v)) for k, v in value.items()}
+    if isinstance(value, list):
+        return [redact_secrets(v) for v in value]
+    return value
+
+
 def safe_rel(root: Path, raw: str) -> Path | None:
     raw = raw.strip().strip("`").strip()
     if not raw or raw.startswith(("http://", "https://")):
@@ -308,33 +316,31 @@ def main() -> int:
     has_project_config = direct_cfg is not None
     system_model = None
     if has_project_config:
-        configured_system_model = direct_cfg.get("systemModel")
-        if not configured_system_model:
+        if not direct_cfg.get("systemModel"):
             print(f"direct API config is missing systemModel: {cfg_source}", file=sys.stderr)
             print(f"hint: run scripts/ns_model_config.py init {root}", file=sys.stderr)
             return 2
-        system_model = load_system_model(configured_system_model)
-        if not system_model:
-            print(f"configured system model no longer exists in OpenClaw system models: {configured_system_model}", file=sys.stderr)
-            print("hint: run scripts/ns_model_config.py list", file=sys.stderr)
-            print(f"then run scripts/ns_model_config.py init {root}", file=sys.stderr)
-            return 2
-        if system_model.get("api") not in SUPPORTED_API:
-            print(f"configured system model exists but is not direct-API compatible: {configured_system_model} (api={system_model.get('api')})", file=sys.stderr)
+        if direct_cfg.get("api") not in SUPPORTED_API:
+            print(f"configured model is not direct-API compatible: {direct_cfg.get('systemModel')} (api={direct_cfg.get('api')})", file=sys.stderr)
             print(f"hint: run scripts/ns_model_config.py init {root}", file=sys.stderr)
             return 2
-        model = model or direct_cfg.get("model") or system_model["model"]
-        base_url = base_url or direct_cfg.get("baseUrl") or system_model.get("baseUrl", "")
-        api_key_env = args.api_key_env if args.api_key_env != DEFAULT_API_KEY_ENV else direct_cfg.get("apiKeyEnv") or env_name_for(system_model["provider"])
+        system_model = {
+            "provider": (direct_cfg.get("modelConfig") or {}).get("provider", ""),
+            "model": direct_cfg.get("model", ""),
+            "modelFull": direct_cfg.get("systemModel", ""),
+            "baseUrl": direct_cfg.get("baseUrl", ""),
+            "api": direct_cfg.get("api", ""),
+            "modelConfig": direct_cfg.get("modelConfig"),
+            "providerConfig": direct_cfg.get("providerConfig"),
+            "source": direct_cfg.get("source"),
+        }
+        model = model or direct_cfg.get("model", "")
+        base_url = base_url or direct_cfg.get("baseUrl", "")
+        api_key_env = args.api_key_env if args.api_key_env != DEFAULT_API_KEY_ENV else direct_cfg.get("apiKeyEnv", api_key_env)
         if args.temperature == 0.7 and direct_cfg.get("temperature") is not None:
             args.temperature = float(direct_cfg.get("temperature"))
-        if args.max_tokens == 6000:
-            if direct_cfg.get("maxTokens") is not None:
-                args.max_tokens = int(direct_cfg.get("maxTokens"))
-            else:
-                model_cfg = system_model.get("modelConfig") or {}
-                if model_cfg.get("maxTokens") is not None:
-                    args.max_tokens = int(model_cfg.get("maxTokens") or 6000)
+        if args.max_tokens == 6000 and direct_cfg.get("maxTokens") is not None:
+            args.max_tokens = int(direct_cfg.get("maxTokens"))
     if not model or not base_url:
         print("direct API model is not configured for this project.", file=sys.stderr)
         print(f"hint: run scripts/ns_model_config.py init {root}", file=sys.stderr)
@@ -343,7 +349,7 @@ def main() -> int:
             print(f"config exists but is incomplete: {cfg_source}", file=sys.stderr)
         return 2
 
-    api_key = os.environ.get(api_key_env, "")
+    api_key = (direct_cfg or {}).get("apiKey") or os.environ.get(api_key_env, "")
     execute = bool(args.execute)
 
     paths = extract_pack_paths(root, input_pack)
@@ -395,8 +401,8 @@ def main() -> int:
         "api": api,
         "configuredSystemModel": direct_cfg.get("systemModel") if isinstance(direct_cfg, dict) else None,
         "configuredModel": direct_cfg.get("model") if isinstance(direct_cfg, dict) else None,
-        "resolvedModelConfig": resolved_model_config,
-        "resolvedProviderConfig": resolved_provider_config,
+        "resolvedModelConfig": redact_secrets(resolved_model_config),
+        "resolvedProviderConfig": redact_secrets(resolved_provider_config),
         "baseUrl": base_url.rstrip("/") if base_url else "BASE_URL_NOT_SET",
         "apiKeyEnv": api_key_env,
         "execute": execute,

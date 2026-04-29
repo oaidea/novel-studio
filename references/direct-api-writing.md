@@ -83,6 +83,7 @@ python3 scripts/ns_model_config.py init <project-dir> --select 1 --non-interacti
     "model": "gpt-5.5",
     "api": "openai-completions",
     "baseUrl": "https://codex.ooooo.codes/v1",
+    "apiKey": "sk-...",
     "apiKeyEnv": "NOVEL_STUDIO_API_KEY_LSJ",
     "temperature": 0.7,
     "maxTokens": 131072,
@@ -105,7 +106,7 @@ python3 scripts/ns_model_config.py init <project-dir> --select 1 --non-interacti
 }
 ```
 
-注意：该文件**不复制 OpenClaw 的 API key**。它会保存已验证可用的模型配置快照，并额外保存 `systemModel` 作为同步锚点。真实执行前仍需 export 对应环境变量。
+注意：该文件会保存已验证可用的模型配置快照，**包括 apiKey**，并额外保存 `systemModel` 作为同步锚点。因此 `.novel-studio/config.json` 会被 `.novel-studio/.gitignore` 忽略；命令行展示和 manifest 会对 apiKey 脱敏。
 
 运行时不会只读取 `baseUrl` 这类少数字段，而是会引用系统模型条目的完整配置，例如：
 

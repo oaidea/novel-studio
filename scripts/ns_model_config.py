@@ -5,8 +5,8 @@ ns_model_config.py
 Discover OpenClaw system model config and initialize/select Novel Studio direct
 API model settings for a project.
 
-This script never copies API keys. It stores a verified direct API model snapshot
-in project config plus the system model name used for future sync.
+This script stores a verified direct API model snapshot (including apiKey) in
+project config plus the system model name used for future sync. Display output redacts secrets.
 
 Usage:
   python3 scripts/ns_model_config.py list [--json]
@@ -52,7 +52,7 @@ def inherited_model_config(provider_id: str, provider: dict, model: dict) -> dic
     inherited = {
         k: v
         for k, v in provider.items()
-        if k not in {"apiKey", "models"}
+        if k not in {"models"}
     }
     inherited["provider"] = provider_id
     inherited.update(model)
@@ -121,7 +121,7 @@ def discover() -> list[dict]:
                     "contextWindow": effective_config.get("contextWindow"),
                     "maxTokens": effective_config.get("maxTokens"),
                     "modelConfig": effective_config,
-                    "providerConfig": {k: v for k, v in provider.items() if k not in {"apiKey", "models"}},
+                    "providerConfig": {k: v for k, v in provider.items() if k not in {"models"}},
                     "source": str(cfg),
                 })
     # Prefer supported OpenAI-compatible models first, then stable display order.
@@ -173,6 +173,18 @@ def project_config_path(root: Path) -> Path:
     return root / ".novel-studio" / "config.json"
 
 
+def ensure_config_gitignore(root: Path) -> None:
+    ns = root / ".novel-studio"
+    ns.mkdir(parents=True, exist_ok=True)
+    ignore = ns / ".gitignore"
+    lines = []
+    if ignore.exists():
+        lines = ignore.read_text(encoding="utf-8").splitlines()
+    if "config.json" not in lines:
+        lines.append("config.json")
+        ignore.write_text("\n".join(lines).strip() + "\n", encoding="utf-8")
+
+
 def ensure_supported(row: dict) -> tuple[bool, str]:
     if not row:
         return False, "model not found"
@@ -185,16 +197,19 @@ def ensure_supported(row: dict) -> tuple[bool, str]:
 
 def build_direct_api_config(row: dict, key_env: str | None, previous: dict | None = None) -> dict:
     previous = previous or {}
+    provider_cfg = row.get("providerConfig") or {}
+    api_key = provider_cfg.get("apiKey") or previous.get("apiKey") or ""
     data = {
         "systemModel": row["full"],
         "model": row["model"],
         "api": row.get("api", ""),
         "baseUrl": row.get("baseUrl", ""),
+        "apiKey": api_key,
         "apiKeyEnv": key_env or previous.get("apiKeyEnv") or env_name_for(row["provider"]),
         "temperature": previous.get("temperature", 0.7),
         "maxTokens": previous.get("maxTokens") or row.get("maxTokens"),
         "modelConfig": row.get("modelConfig"),
-        "providerConfig": row.get("providerConfig"),
+        "providerConfig": provider_cfg,
         "source": row.get("source"),
     }
     return data
@@ -203,6 +218,7 @@ def build_direct_api_config(row: dict, key_env: str | None, previous: dict | Non
 def write_project_config(root: Path, row: dict, key_env: str | None, previous: dict | None = None) -> Path:
     ns = root / ".novel-studio"
     ns.mkdir(parents=True, exist_ok=True)
+    ensure_config_gitignore(root)
     config_path = project_config_path(root)
     config = {}
     if config_path.exists():
@@ -213,6 +229,20 @@ def write_project_config(root: Path, row: dict, key_env: str | None, previous: d
     config["directApi"] = build_direct_api_config(row, key_env, previous)
     config_path.write_text(json.dumps(config, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     return config_path
+
+
+def redact_secrets(value):
+    if isinstance(value, dict):
+        out = {}
+        for k, v in value.items():
+            if k.lower() == "apikey":
+                out[k] = "***" if v else ""
+            else:
+                out[k] = redact_secrets(v)
+        return out
+    if isinstance(value, list):
+        return [redact_secrets(v) for v in value]
+    return value
 
 
 def read_project_config(root: Path) -> tuple[dict | None, Path]:
@@ -250,8 +280,8 @@ def validate_project(root: Path) -> int:
         "resolvedModel": matched["full"],
         "api": matched.get("api", ""),
         "baseUrl": matched.get("baseUrl", ""),
-        "modelConfig": matched.get("modelConfig"),
-        "providerConfig": matched.get("providerConfig"),
+        "modelConfig": redact_secrets(matched.get("modelConfig")),
+        "providerConfig": redact_secrets(matched.get("providerConfig")),
     }, ensure_ascii=False, indent=2))
     return 0
 
@@ -285,7 +315,7 @@ def show_project(root: Path) -> int:
     if not cfg:
         print(f"direct API config not found in: {project_config_path(root)}")
         return 1
-    print(json.dumps({"configPath": str(path), "directApi": cfg}, ensure_ascii=False, indent=2))
+    print(json.dumps({"configPath": str(path), "directApi": redact_secrets(cfg)}, ensure_ascii=False, indent=2))
     return 0
 
 
