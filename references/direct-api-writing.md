@@ -39,6 +39,38 @@ NS 项目文件 → input pack → direct_api_writer.py → 指定模型 API →
 
 ## 配置方式
 
+### 从 OpenClaw 系统模型配置选择
+
+先列出当前系统模型：
+
+```bash
+python3 scripts/ns_model_config.py list
+```
+
+为某个小说项目初始化直连 API 配置：
+
+```bash
+python3 scripts/ns_model_config.py init <project-dir>
+```
+
+也可以用 alias / full id / 序号非交互选择：
+
+```bash
+python3 scripts/ns_model_config.py init <project-dir> --select LSJ --non-interactive
+python3 scripts/ns_model_config.py init <project-dir> --select lsj/gpt-5.5 --non-interactive
+python3 scripts/ns_model_config.py init <project-dir> --select 1 --non-interactive
+```
+
+它会写入：
+
+```text
+.novel-studio/direct-api-config.json
+```
+
+注意：该文件**不复制 OpenClaw 的 API key**，只记录 provider / model / baseUrl / apiKeyEnv。真实执行前仍需 export 对应环境变量。
+
+### 手动环境变量
+
 推荐使用环境变量：
 
 ```bash
@@ -47,7 +79,7 @@ export NOVEL_STUDIO_BASE_URL='https://api.example.com/v1'
 export NOVEL_STUDIO_MODEL='model-name'
 ```
 
-也可命令行覆盖：
+也可命令行覆盖；命令行参数优先于 `.novel-studio/direct-api-config.json`：
 
 ```bash
 python3 scripts/direct_api_writer.py <project-dir> ch_005 \

@@ -159,7 +159,21 @@ def main() -> int:
 
     base_url = args.base_url
     model = args.model
-    api_key = os.environ.get(args.api_key_env, "")
+    api_key_env = args.api_key_env
+    project_cfg = root / ".novel-studio" / "direct-api-config.json"
+    if project_cfg.exists():
+        try:
+            cfg = json.loads(project_cfg.read_text(encoding="utf-8"))
+            base_url = base_url or cfg.get("baseUrl", "")
+            model = model or cfg.get("model", "")
+            api_key_env = args.api_key_env if args.api_key_env != DEFAULT_API_KEY_ENV else cfg.get("apiKeyEnv", args.api_key_env)
+            if args.temperature == 0.7 and cfg.get("temperature") is not None:
+                args.temperature = float(cfg.get("temperature"))
+            if args.max_tokens == 6000 and cfg.get("maxTokens") is not None:
+                args.max_tokens = int(cfg.get("maxTokens"))
+        except Exception as e:
+            print(f"warning: failed to read direct API config: {e}", file=sys.stderr)
+    api_key = os.environ.get(api_key_env, "")
     execute = bool(args.execute)
 
     paths = extract_pack_paths(root, input_pack)
@@ -200,7 +214,7 @@ def main() -> int:
         "promptProfile": args.prompt_profile,
         "model": payload["model"],
         "baseUrl": base_url.rstrip("/") if base_url else "BASE_URL_NOT_SET",
-        "apiKeyEnv": args.api_key_env,
+        "apiKeyEnv": api_key_env,
         "execute": execute,
         "temperature": args.temperature,
         "maxTokens": args.max_tokens,
@@ -225,7 +239,7 @@ def main() -> int:
         print(f"missing model; set --model or {DEFAULT_MODEL_ENV}", file=sys.stderr)
         return 2
     if not api_key:
-        print(f"missing api key env: {args.api_key_env}", file=sys.stderr)
+        print(f"missing api key env: {api_key_env}", file=sys.stderr)
         return 2
 
     started = time.time()

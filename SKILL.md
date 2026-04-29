@@ -416,6 +416,7 @@ novels/<项目名>/
 - `scripts/scene_tension_check.py`：轻量检查场景张力风险（阻力/代价不足、对白空转、纯气氛静态段）
 - `scripts/information_release_check.py`：轻量检查信息释放风险（解释腔、真相/机制词过密、已知信息对白）
 - `scripts/direct_api_writer.py`：从 input pack 组装隔离请求并可选调用 OpenAI-compatible Chat Completions API；默认 dry-run，输出到 `.novel-studio/outputs/`
+- `scripts/ns_model_config.py`：读取 OpenClaw 系统模型配置并为项目初始化 `.novel-studio/direct-api-config.json`，支持列出模型、交互选择或按 alias/full id 选择
 - `scripts/workflow_runner.py`：串行触发最小 workflow chain（支持 startup / style / style-full / chapter-full / writeback / refresh / deps / deps-all / doctor / full 模式）
 
 ---
@@ -676,7 +677,7 @@ novels/<项目名>/
 - `references/templates/scene-tension-task-template.md`：场景张力任务书模板
 - `references/information-release-control.md`：信息释放控制规则（信息分层、释放载体、误导、伏笔状态）
 - `references/templates/information-release-task-template.md`：信息释放任务书模板
-- `references/direct-api-writing.md`：直连 API 写作通道说明（配置、dry-run、execute、manifest、输出位置）
+- `references/direct-api-writing.md`：直连 API 写作通道说明（配置、dry-run、execute、manifest、输出位置；模型可用 `scripts/ns_model_config.py list/init` 从 OpenClaw 系统模型配置选择）
 - `references/faction-naming-guide.md`：派/帮/教/宗/门组织命名规则卡
 - `references/writing-study-plan.md`：写作学习计划与训练模式参考
 - `references/style-library-index.md`：风格库索引
