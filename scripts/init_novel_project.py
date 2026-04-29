@@ -87,7 +87,7 @@ NOVEL_STUDIO_README = """# .novel-studio
 
 CONFIG_TEMPLATE = {
     "directApi": {
-        "model": ""
+        "systemModel": ""
     },
 }
 

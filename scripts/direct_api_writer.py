@@ -304,36 +304,37 @@ def main() -> int:
     base_url = args.base_url
     model = args.model
     api_key_env = args.api_key_env
-    cfg_source = project_config_path(root)
     direct_cfg, cfg_source = read_project_direct_api(root)
     has_project_config = direct_cfg is not None
+    system_model = None
     if has_project_config:
-        configured_model = direct_cfg.get("model") or direct_cfg.get("modelFull")
-        if configured_model and not model:
-            system_model = load_system_model(configured_model)
-            if not system_model:
-                print(f"configured model no longer exists in OpenClaw system models: {configured_model}", file=sys.stderr)
-                print("hint: run scripts/ns_model_config.py list", file=sys.stderr)
-                print(f"then run scripts/ns_model_config.py init {root}", file=sys.stderr)
-                return 2
-            if system_model.get("api") not in SUPPORTED_API:
-                print(f"configured model exists but is not direct-API compatible: {configured_model} (api={system_model.get('api')})", file=sys.stderr)
-                print(f"hint: run scripts/ns_model_config.py init {root}", file=sys.stderr)
-                return 2
-            model = system_model["model"]
-            base_url = base_url or system_model.get("baseUrl", "")
-            model_cfg = system_model.get("modelConfig") or {}
-            if args.max_tokens == 6000 and model_cfg.get("maxTokens") is not None:
-                args.max_tokens = int(model_cfg.get("maxTokens") or 6000)
-            if args.api_key_env == DEFAULT_API_KEY_ENV:
-                api_key_env = direct_cfg.get("apiKeyEnv") or env_name_for(system_model["provider"])
-        base_url = base_url or direct_cfg.get("baseUrl", "")
-        model = model or direct_cfg.get("model", "")
-        api_key_env = args.api_key_env if args.api_key_env != DEFAULT_API_KEY_ENV else direct_cfg.get("apiKeyEnv", api_key_env)
+        configured_system_model = direct_cfg.get("systemModel")
+        if not configured_system_model:
+            print(f"direct API config is missing systemModel: {cfg_source}", file=sys.stderr)
+            print(f"hint: run scripts/ns_model_config.py init {root}", file=sys.stderr)
+            return 2
+        system_model = load_system_model(configured_system_model)
+        if not system_model:
+            print(f"configured system model no longer exists in OpenClaw system models: {configured_system_model}", file=sys.stderr)
+            print("hint: run scripts/ns_model_config.py list", file=sys.stderr)
+            print(f"then run scripts/ns_model_config.py init {root}", file=sys.stderr)
+            return 2
+        if system_model.get("api") not in SUPPORTED_API:
+            print(f"configured system model exists but is not direct-API compatible: {configured_system_model} (api={system_model.get('api')})", file=sys.stderr)
+            print(f"hint: run scripts/ns_model_config.py init {root}", file=sys.stderr)
+            return 2
+        model = model or direct_cfg.get("model") or system_model["model"]
+        base_url = base_url or direct_cfg.get("baseUrl") or system_model.get("baseUrl", "")
+        api_key_env = args.api_key_env if args.api_key_env != DEFAULT_API_KEY_ENV else direct_cfg.get("apiKeyEnv") or env_name_for(system_model["provider"])
         if args.temperature == 0.7 and direct_cfg.get("temperature") is not None:
             args.temperature = float(direct_cfg.get("temperature"))
-        if args.max_tokens == 6000 and direct_cfg.get("maxTokens") is not None:
-            args.max_tokens = int(direct_cfg.get("maxTokens"))
+        if args.max_tokens == 6000:
+            if direct_cfg.get("maxTokens") is not None:
+                args.max_tokens = int(direct_cfg.get("maxTokens"))
+            else:
+                model_cfg = system_model.get("modelConfig") or {}
+                if model_cfg.get("maxTokens") is not None:
+                    args.max_tokens = int(model_cfg.get("maxTokens") or 6000)
     if not model or not base_url:
         print("direct API model is not configured for this project.", file=sys.stderr)
         print(f"hint: run scripts/ns_model_config.py init {root}", file=sys.stderr)
@@ -392,6 +393,7 @@ def main() -> int:
         "promptProfile": args.prompt_profile,
         "model": payload["model"],
         "api": api,
+        "configuredSystemModel": direct_cfg.get("systemModel") if isinstance(direct_cfg, dict) else None,
         "configuredModel": direct_cfg.get("model") if isinstance(direct_cfg, dict) else None,
         "resolvedModelConfig": resolved_model_config,
         "resolvedProviderConfig": resolved_provider_config,

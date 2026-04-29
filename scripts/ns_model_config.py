@@ -5,13 +5,13 @@ ns_model_config.py
 Discover OpenClaw system model config and initialize/select Novel Studio direct
 API model settings for a project.
 
-This script does not copy API keys, base URLs, or provider details into project
-files. It writes only the selected model reference plus optional local overrides.
-direct_api_writer.py resolves provider/baseUrl/api from OpenClaw system config at runtime.
+This script never copies API keys. It stores a verified direct API model snapshot
+in project config plus the system model name used for future sync.
 
 Usage:
   python3 scripts/ns_model_config.py list [--json]
   python3 scripts/ns_model_config.py init <project-dir> [--select <provider/model|alias|number>] [--non-interactive]
+  python3 scripts/ns_model_config.py sync <project-dir>
   python3 scripts/ns_model_config.py show <project-dir>
 """
 
@@ -173,18 +173,34 @@ def project_config_path(root: Path) -> Path:
     return root / ".novel-studio" / "config.json"
 
 
-def build_direct_api_config(row: dict, key_env: str | None) -> dict:
+def ensure_supported(row: dict) -> tuple[bool, str]:
+    if not row:
+        return False, "model not found"
+    if not row.get("supportedDirectApi"):
+        return False, f"model api is not supported: {row.get('api')}"
+    if not row.get("baseUrl"):
+        return False, "model has no baseUrl"
+    return True, ""
+
+
+def build_direct_api_config(row: dict, key_env: str | None, previous: dict | None = None) -> dict:
+    previous = previous or {}
     data = {
-        "model": row["full"],
-        "temperature": 0.7,
-        "maxTokens": min(int(row.get("maxTokens") or 6000), 6000),
+        "systemModel": row["full"],
+        "model": row["model"],
+        "api": row.get("api", ""),
+        "baseUrl": row.get("baseUrl", ""),
+        "apiKeyEnv": key_env or previous.get("apiKeyEnv") or env_name_for(row["provider"]),
+        "temperature": previous.get("temperature", 0.7),
+        "maxTokens": previous.get("maxTokens") or row.get("maxTokens"),
+        "modelConfig": row.get("modelConfig"),
+        "providerConfig": row.get("providerConfig"),
+        "source": row.get("source"),
     }
-    if key_env:
-        data["apiKeyEnv"] = key_env
     return data
 
 
-def write_project_config(root: Path, row: dict, key_env: str | None) -> Path:
+def write_project_config(root: Path, row: dict, key_env: str | None, previous: dict | None = None) -> Path:
     ns = root / ".novel-studio"
     ns.mkdir(parents=True, exist_ok=True)
     config_path = project_config_path(root)
@@ -194,7 +210,7 @@ def write_project_config(root: Path, row: dict, key_env: str | None) -> Path:
             config = json.loads(config_path.read_text(encoding="utf-8"))
         except Exception:
             config = {}
-    config["directApi"] = build_direct_api_config(row, key_env)
+    config["directApi"] = build_direct_api_config(row, key_env, previous)
     config_path.write_text(json.dumps(config, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     return config_path
 
@@ -214,31 +230,52 @@ def read_project_config(root: Path) -> tuple[dict | None, Path]:
 
 def validate_project(root: Path) -> int:
     cfg, path = read_project_config(root)
-    if not cfg or not cfg.get("model"):
+    if not cfg or not cfg.get("systemModel"):
         print(f"direct API model is not configured in: {project_config_path(root)}", file=sys.stderr)
         print(f"hint: run scripts/ns_model_config.py init {root}", file=sys.stderr)
         return 2
-    model_ref = cfg.get("model")
+    model_ref = cfg.get("systemModel")
     rows = discover()
     matched = resolve_selection(rows, model_ref)
-    if not matched:
-        print(f"configured model no longer exists in OpenClaw system models: {model_ref}", file=sys.stderr)
+    ok, reason = ensure_supported(matched)
+    if not ok:
+        print(f"configured system model is not usable: {model_ref}; {reason}", file=sys.stderr)
         print("hint: run scripts/ns_model_config.py list", file=sys.stderr)
         print(f"then run scripts/ns_model_config.py init {root}", file=sys.stderr)
-        return 2
-    if not matched.get("supportedDirectApi"):
-        print(f"configured model exists but is not direct-API compatible: {model_ref} (api={matched.get('api')})", file=sys.stderr)
-        print(f"hint: run scripts/ns_model_config.py init {root}", file=sys.stderr)
         return 2
     print(json.dumps({
         "configPath": str(path),
         "status": "ok",
-        "configuredModel": model_ref,
+        "configuredSystemModel": model_ref,
         "resolvedModel": matched["full"],
-        "baseUrl": matched.get("baseUrl", ""),
         "api": matched.get("api", ""),
+        "baseUrl": matched.get("baseUrl", ""),
         "modelConfig": matched.get("modelConfig"),
         "providerConfig": matched.get("providerConfig"),
+    }, ensure_ascii=False, indent=2))
+    return 0
+
+
+def sync_project(root: Path) -> int:
+    cfg, path = read_project_config(root)
+    if not cfg or not cfg.get("systemModel"):
+        print(f"direct API model is not configured in: {project_config_path(root)}", file=sys.stderr)
+        print(f"hint: run scripts/ns_model_config.py init {root}", file=sys.stderr)
+        return 2
+    model_ref = cfg.get("systemModel")
+    matched = resolve_selection(discover(), model_ref)
+    ok, reason = ensure_supported(matched)
+    if not ok:
+        print(f"sync failed: configured system model is not usable: {model_ref}; {reason}", file=sys.stderr)
+        print("config was not changed", file=sys.stderr)
+        return 2
+    out = write_project_config(root, matched, cfg.get("apiKeyEnv"), previous=cfg)
+    print(json.dumps({
+        "status": "synced",
+        "configPath": str(out),
+        "systemModel": model_ref,
+        "api": matched.get("api"),
+        "baseUrl": matched.get("baseUrl"),
     }, ensure_ascii=False, indent=2))
     return 0
 
@@ -266,12 +303,16 @@ def main() -> int:
     p_show.add_argument("project_dir")
     p_validate = sub.add_parser("validate")
     p_validate.add_argument("project_dir")
+    p_sync = sub.add_parser("sync")
+    p_sync.add_argument("project_dir")
     args = ap.parse_args()
 
     if args.cmd == "show":
         return show_project(Path(args.project_dir).expanduser().resolve())
     if args.cmd == "validate":
         return validate_project(Path(args.project_dir).expanduser().resolve())
+    if args.cmd == "sync":
+        return sync_project(Path(args.project_dir).expanduser().resolve())
 
     rows = discover()
     if args.cmd == "list":
@@ -290,12 +331,14 @@ def main() -> int:
         if not row:
             print("no model selected", file=sys.stderr)
             return 1
-        if not row["supportedDirectApi"]:
-            print(f"warning: selected model api '{row['api']}' is not directly supported by direct_api_writer.py", file=sys.stderr)
+        ok, reason = ensure_supported(row)
+        if not ok:
+            print(f"selected model is not usable for direct API: {row.get('full') if row else ''}; {reason}", file=sys.stderr)
+            return 2
         cfg = write_project_config(root, row, args.api_key_env)
         print(f"wrote direct API config: {cfg}")
         print(f"selected: {row['full']}")
-        print(f"api key env: {args.api_key_env or env_name_for(row['provider'])} (resolved at runtime; not required in config)")
+        print(f"api key env: {args.api_key_env or env_name_for(row['provider'])}")
         return 0
 
     return 1

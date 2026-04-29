@@ -79,12 +79,33 @@ python3 scripts/ns_model_config.py init <project-dir> --select 1 --non-interacti
 ```json
 {
   "directApi": {
-    "model": "lsj/gpt-5.5"
+    "systemModel": "lsj/gpt-5.5",
+    "model": "gpt-5.5",
+    "api": "openai-completions",
+    "baseUrl": "https://codex.ooooo.codes/v1",
+    "apiKeyEnv": "NOVEL_STUDIO_API_KEY_LSJ",
+    "temperature": 0.7,
+    "maxTokens": 131072,
+    "modelConfig": {
+      "provider": "lsj",
+      "baseUrl": "https://codex.ooooo.codes/v1",
+      "api": "openai-completions",
+      "id": "gpt-5.5",
+      "name": "GPT-5.5",
+      "reasoning": true,
+      "input": ["text", "image"],
+      "contextWindow": 1000000,
+      "maxTokens": 131072
+    },
+    "providerConfig": {
+      "baseUrl": "https://codex.ooooo.codes/v1",
+      "api": "openai-completions"
+    }
   }
 }
 ```
 
-注意：该文件**不复制 OpenClaw 的 API key**，只记录 model（必要）和少量覆盖项（如 temperature/maxTokens/apiKeyEnv）。真实执行前仍需 export 对应环境变量。
+注意：该文件**不复制 OpenClaw 的 API key**。它会保存已验证可用的模型配置快照，并额外保存 `systemModel` 作为同步锚点。真实执行前仍需 export 对应环境变量。
 
 运行时不会只读取 `baseUrl` 这类少数字段，而是会引用系统模型条目的完整配置，例如：
 
@@ -99,7 +120,7 @@ python3 scripts/ns_model_config.py init <project-dir> --select 1 --non-interacti
 }
 ```
 
-这些完整字段会写入 direct API manifest 的 `resolvedModelConfig`，provider 侧非密钥配置会写入 `resolvedProviderConfig`。如果系统模型配置变化，下一次运行会使用最新配置；如果模型 ID 消失，则报错要求重新选择。
+这些完整字段会写入 config 的 `directApi.modelConfig`，也会写入 direct API manifest 的 `resolvedModelConfig`；provider 侧非密钥配置会写入 `providerConfig` / `resolvedProviderConfig`。如果系统模型配置变化，可运行 `sync` 用 `systemModel` 重新匹配并覆盖保存；如果同步失败，原 config 不变。
 
 ### 手动环境变量
 
@@ -188,6 +209,14 @@ python3 scripts/direct_api_writer.py <project-dir> ch_005 --dry-run
 ```bash
 python3 scripts/ns_model_config.py validate <project-dir>
 ```
+
+同步系统模型配置快照：
+
+```bash
+python3 scripts/ns_model_config.py sync <project-dir>
+```
+
+`sync` 成功时会用 `systemModel` 从系统配置重新匹配并覆盖保存；失败时不改变原 config。
 
 校验失败时，重新运行：
 
