@@ -11,8 +11,8 @@ project config plus the system model name used for future sync. Display output r
 Usage:
   python3 scripts/ns_model_config.py list [--json]
   python3 scripts/ns_model_config.py init <project-dir> [--select <provider/model|alias|number>] [--non-interactive]
-  python3 scripts/ns_model_config.py sync <project-dir>
-  python3 scripts/ns_model_config.py show <project-dir>
+  python3 scripts/ns_model_config.py global sync
+  python3 scripts/ns_model_config.py sync <project-dir>    # deprecated → use global sync
 """
 
 from __future__ import annotations
@@ -189,7 +189,8 @@ def ensure_supported(row: dict) -> tuple[bool, str]:
     return True, ""
 
 
-def build_direct_api_config(row: dict, key_env: str | None, previous: dict | None = None) -> dict:
+def build_direct_api_config(row: dict, key_env: str | None, previous: dict | None = None,
+                           config_mode: str = "imported") -> dict:
     previous = previous or {}
     provider_cfg = row.get("providerConfig") or {}
     api_key = provider_cfg.get("apiKey") or previous.get("apiKey") or ""
@@ -205,6 +206,7 @@ def build_direct_api_config(row: dict, key_env: str | None, previous: dict | Non
         "modelConfig": row.get("modelConfig"),
         "providerConfig": provider_cfg,
         "source": row.get("source"),
+        "configMode": config_mode,
     }
     return data
 
@@ -509,11 +511,11 @@ def set_global(select: str | None, non_interactive: bool, api_key_env: str | Non
 
     previous = existing.get("directApi")
     if config_mode == "custom":
-        existing["directApi"] = build_direct_api_config(row, api_key_env, previous=previous)
+        existing["directApi"] = build_direct_api_config(row, api_key_env, previous=previous, config_mode="manual")
         if custom_temp is not None:
             existing["directApi"]["temperature"] = custom_temp
     else:
-        existing["directApi"] = build_direct_api_config(row, api_key_env, previous=previous)
+        existing["directApi"] = build_direct_api_config(row, api_key_env, previous=previous, config_mode="imported")
 
     write_global_config(existing)
     mode_label = "手动配置" if config_mode == "custom" else "系统导入"
@@ -567,6 +569,67 @@ def workmode_set(mode: str) -> int:
     return 0
 
 
+def sync_global() -> int:
+    """Sync the global direct API config with current system model config.
+
+    Only allowed when configMode == 'imported'. Manual configs are rejected.
+    """
+    full_cfg, _ = read_global_config()
+    if not full_cfg or not isinstance(full_cfg.get("directApi"), dict):
+        print("❌ 全局 direct API 配置不存在，请先运行 `global set` 配置模型。", file=sys.stderr)
+        return 1
+
+    direct_api = full_cfg["directApi"]
+    config_mode = direct_api.get("configMode", "")
+
+    if config_mode != "imported":
+        reason = "手动配置" if config_mode == "manual" else f"未知来源 ({config_mode or '缺失'})"
+        print(f"❌ 拒绝同步: 当前配置为「{reason}」，仅系统导入的配置支持同步。", file=sys.stderr)
+        print(f"   提示: 用 `global set` 重新选择模型并选「系统导入」来建立可同步的配置。", file=sys.stderr)
+        return 2
+
+    system_model = direct_api.get("systemModel", "")
+    if not system_model:
+        print("❌ 当前配置缺少 systemModel 字段，无法同步。", file=sys.stderr)
+        return 1
+
+    # Re-discover system models
+    rows = discover()
+    if not rows:
+        print("❌ 无法获取系统模型列表。", file=sys.stderr)
+        return 1
+
+    # Find matching model by full name
+    match = None
+    for r in rows:
+        if r["full"] == system_model:
+            match = r
+            break
+
+    if not match:
+        print(f"❌ 系统模型列表中找不到「{system_model}」。", file=sys.stderr)
+        print(f"   该模型可能已被移除或重命名。请用 `global set` 重新选择。", file=sys.stderr)
+        return 2
+
+    # Check support
+    ok, reason = ensure_supported(match)
+    if not ok:
+        print(f"❌ 「{system_model}」当前系统配置不支持直连 API: {reason}", file=sys.stderr)
+        print(f"   请用 `global set` 选择其他可用模型。", file=sys.stderr)
+        return 2
+
+    # Sync: rebuild config from fresh system data, preserve apiKey/temperature from old config
+    previous = direct_api
+    full_cfg["directApi"] = build_direct_api_config(match, previous.get("apiKeyEnv"), previous=previous, config_mode="imported")
+    write_global_config(full_cfg)
+
+    print(f"✅ 同步成功: {system_model}")
+    print(f"   baseUrl: {match.get('baseUrl', 'N/A')}")
+    print(f"   api:     {match.get('api', 'N/A')}")
+    print(f"   configMode: imported")
+    return 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -597,6 +660,7 @@ def main() -> int:
                               help="manual config mode: enter baseUrl/apiKey/etc. instead of importing from system")
     p_global_sub.add_parser("show")
     p_global_sub.add_parser("remove")
+    p_global_sub.add_parser("sync")
     # --- workmode commands ---
     p_workmode = sub.add_parser("workmode")
     p_workmode_sub = p_workmode.add_subparsers(dest="workmode_cmd")
@@ -614,7 +678,9 @@ def main() -> int:
             return show_global()
         if args.global_cmd == "remove":
             return remove_global()
-        print("usage: ns_model_config.py global {set,show,remove}", file=sys.stderr)
+        if args.global_cmd == "sync":
+            return sync_global()
+        print("usage: ns_model_config.py global {set,show,remove,sync}", file=sys.stderr)
         return 1
     if args.cmd == "workmode":
         if args.workmode_cmd == "show":
@@ -633,7 +699,7 @@ def main() -> int:
         return 1
     if args.cmd == "sync":
         print("⚠️  'sync <project-dir>' is deprecated. Model config is now global.", file=sys.stderr)
-        print("   Use: ns_model_config.py global set  (to re-select the global model)", file=sys.stderr)
+        print("   Use: ns_model_config.py global sync  (to sync imported config with current system)", file=sys.stderr)
         return 1
 
     rows = discover()
