@@ -50,6 +50,110 @@
   - 系统模型模式 → 走 OpenClaw 系统对话模型
   - 直连模式 → 走 `direct_api_writer.py` 直连 API
 
+### 直连 API 错误自动回退（Auto Fallback）
+
+当直连模式下执行 `direct_api_writer.py --execute` 失败时，脚本会**自动将 `workMode` 切换为 `system`**（系统模型模式），并在 stderr 输出 `NS_DIRECT_API_ERROR` JSON 结构。
+
+**NS 系统模型必须按以下流程处理：**
+
+1. **检测回退信号**：解析 stderr 中的 `═══ NS_DIRECT_API_ERROR` 行，取出 JSON 对象
+2. **确认 `fallbackToSystem: true`**：说明 workMode 已自动切到系统模式
+3. **告知用户**：用简洁的中文告诉用户：
+   - 直连 API 调用失败（附错误简述和建议）
+   - 工作模式已自动切回「系统模型」
+   - 当前任务已由系统模型接管继续处理
+   - 稍后可用「配置模型」重新设置直连 API
+4. **继续处理原任务**：不要中断用户的工作流，直接用系统模型完成用户最初要求的创作/写作/修稿任务
+5. **不要反复重试直连 API**：已在同一个 session 中失败过的直连模型，不要再次用 `--execute` 重试，除非用户确认已修复配置
+
+**架构本质**：系统模型委托 API 模式 → API 报错 → 系统模型接管并继续。用户始终有一条可用的创作路径，不会因为直连 API 故障而被阻断。
+
+### 项目会话保护与断点恢复
+
+Novel Studio 为每个项目维护独立的会话状态（`<project>/.novel-studio/session-state.json`），全局配置文件维护最后活跃项目指针（`lastProject`）。当会话因错误、重置等原因意外中断后，再次进入项目时会自动触发恢复流程。
+
+**会话管理脚本**：`python3 scripts/ns_session.py <cmd> <project> [...]`
+
+| 命令 | 作用 |
+|------|------|
+| `start --task <desc>` | 标记新会话开始（必须最先调用） |
+| `complete [--summary]` | 标记会话正常完成 |
+| `fail --error <msg>` | 标记会话失败并记录错误 |
+| `status [--json]` | 查看会话状态（含中断检测） |
+| `clear` | 清除所有会话记录 |
+| `global-last [--json]` | 查看全局最后项目指针 |
+
+**NS 系统模型必须遵循以下会话协议：**
+
+#### 1. 进入项目时
+
+```bash
+python3 scripts/ns_session.py status <project-dir>
+```
+
+- 如果显示 `⚠️ 检测到未正常结束的会话（可能被中断）`：
+  - **显示中断摘要**：上次任务、工作模式、章节、时间
+  - **显示上次成功和上次失败**（如有）
+  - **询问用户**：「检测到上次会话可能中断了，要接着做吗？」
+  - 如果用户选「是」→ 恢复原任务，不重新 start
+  - 如果用户选「否」→ `clear` 清除旧状态，然后重新 `start`
+- 如果没有活跃会话 → 直接开始新任务（自动 `start`）
+- 如果有已完成的会话 → 显示上次成功摘要，然后开始新任务（自动 `start`）
+
+#### 2. 开始新任务时
+
+```bash
+python3 scripts/ns_session.py start <project-dir> \
+  --task "<用户原始指令>" \
+  --type <task_type> \
+  --chapter <chapter_id> \
+  --work-mode <system|direct>
+```
+
+`task_type` 映射：
+- 写作/续写 → `write_chapter`
+- 审校/审查 → `review`
+- 润色/去AI味 → `refine`
+- 大纲/规划 → `outline`
+- 设定/角色 → `settings`
+- 风格 → `style`
+- 项目治理 → `governance`
+- 其他 → 简短英文描述
+
+#### 3. 任务正常完成时
+
+```bash
+python3 scripts/ns_session.py complete <project-dir> --summary "<一句话摘要>"
+```
+
+#### 4. 任务失败时
+
+`direct_api_writer.py` 已内置自动调用（直连 API 错误场景）。
+
+其他错误场景由 NS 系统模型手动调用：
+
+```bash
+python3 scripts/ns_session.py fail <project-dir> \
+  --error "<错误简述>" \
+  --suggestions "<修复建议>"
+```
+
+#### 5. 会话恢复快捷入口
+
+如果需要快速回到上次中断的项目：
+
+```bash
+python3 scripts/ns_session.py global-last
+```
+
+如果返回的项目存在且有中断标记，直接进入恢复流程。
+
+**关键原则**：
+- **每次 NS 任务必须先 `start`**，这是断点恢复的锚点
+- **任务结束必须 `complete` 或 `fail`**，否则下次进入会误判为中断
+- **`start` 会自动更新全局 `lastProject` 指针**
+- **中断后不自动清除状态**，由用户决定是继续还是放弃
+
 ### 任务模式选择
 
 先判断当前任务属于哪一类,再进入对应模式:

@@ -253,6 +253,18 @@ Direct API 默认使用两层消息：
 
 ---
 
+## 错误自动回退（Auto Fallback）
+
+当 `direct_api_writer.py --execute` 直连 API 调用失败时：
+
+1. **自动切换工作模式**：脚本会将 `workMode` 从 `direct` 自动切为 `system`
+2. **输出结构化错误**：stderr 会输出 `NS_DIRECT_API_ERROR` JSON，包含 `fallbackToSystem: true`
+3. **系统模型接管**：NS 系统模型检测到回退信号后，会通知用户并直接用系统对话模型继续完成创作任务
+4. **用户不被阻断**：即使直连 API 不可用，用户始终有系统模型这条可用的创作路径
+5. **恢复直连**：修复配置后，用户说「直连模式」即可切回
+
+架构本质：系统模型委托 API 模式 → API 报错 → 系统模型接管并继续。
+
 ## 红线
 
 - 不把系统聊天历史带入 API 请求。

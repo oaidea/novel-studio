@@ -27,6 +27,7 @@ import argparse
 import json
 import os
 import re
+import subprocess
 import sys
 import time
 
@@ -94,53 +95,8 @@ def inherited_model_config(provider_id: str, provider: dict, model: dict) -> dic
     return inherited
 
 
-def load_system_model(model_ref: str) -> dict | None:
-    config_paths = [
-        Path("/root/.openclaw/openclaw.json"),
-        Path("/root/.openclaw/agents/main/agent/models.json"),
-    ]
-    for cfg_path in config_paths:
-        try:
-            data = json.loads(cfg_path.read_text(encoding="utf-8"))
-        except Exception:
-            continue
-        providers = providers_from_config(data)
-        for provider_id, provider in providers.items():
-            if not isinstance(provider, dict):
-                continue
-            base_url = provider.get("baseUrl") or provider.get("baseURL") or provider.get("base_url") or ""
-            provider_api = provider.get("api") or ""
-            for m in provider.get("models") or []:
-                if not isinstance(m, dict) or not m.get("id"):
-                    continue
-                full = f"{provider_id}/{m['id']}"
-                if model_ref not in {full, m["id"]}:
-                    continue
-                effective_config = inherited_model_config(provider_id, provider, m)
-                return {
-                    "provider": provider_id,
-                    "model": m["id"],
-                    "modelFull": full,
-                    "baseUrl": effective_config.get("baseUrl", ""),
-                    "api": effective_config.get("api", ""),
-                    "modelConfig": effective_config,
-                    "providerConfig": {k: v for k, v in provider.items() if k not in {"apiKey", "models"}},
-                    "source": str(cfg_path),
-                }
-    return None
-
-
-def env_name_for(provider: str) -> str:
-    safe = "".join(ch if ch.isalnum() else "_" for ch in provider.upper())
-    return "NOVEL_STUDIO_API_KEY_" + safe
-
-
-# read_project_direct_api removed — model config is now global only.
-
-
 def read_global_direct_api() -> tuple[dict | None, Path]:
-    """Read the Novel Studio global direct API config (default for projects
-    without their own config)."""
+    """Read the Novel Studio global direct API config."""
     if GLOBAL_CONFIG_PATH.exists():
         try:
             cfg = json.loads(GLOBAL_CONFIG_PATH.read_text(encoding="utf-8"))
@@ -367,151 +323,25 @@ def trim_log_record(record: dict) -> dict:
     return {k: v for k, v in record.items() if k in keep_keys}
 
 
-def discover_alternative_models(current_model_full: str) -> list[dict]:
-    """Scan system OpenClaw config and return direct-API-compatible models,
-    excluding the one that just failed."""
-    config_paths = [
-        Path("/root/.openclaw/openclaw.json"),
-        Path("/root/.openclaw/agents/main/agent/models.json"),
-    ]
-    rows = []
-    seen = set()
-    for cfg_path in config_paths:
-        try:
-            data = json.loads(cfg_path.read_text(encoding="utf-8"))
-        except Exception:
-            continue
-        providers = providers_from_config(data)
-        for provider_id, provider in providers.items():
-            if not isinstance(provider, dict):
-                continue
-            provider_base = provider.get("baseUrl") or provider.get("baseURL") or provider.get("base_url") or ""
-            provider_api = provider.get("api") or ""
-            provider_key = provider.get("apiKey") or ""
-            for m in provider.get("models") or []:
-                if not isinstance(m, dict) or not m.get("id"):
-                    continue
-                # Skip image-generation models
-                if "image" in m["id"].lower() or "image" in (m.get("name") or "").lower():
-                    continue
-                full = f"{provider_id}/{m['id']}"
-                if full in seen:
-                    continue
-                seen.add(full)
-                # Skip the model that just failed
-                if full == current_model_full or m["id"] == current_model_full:
-                    continue
-                cfg = inherited_model_config(provider_id, provider, m)
-                api = cfg.get("api", "")
-                if api not in SUPPORTED_API:
-                    continue
-                base_url = cfg.get("baseUrl", "") or provider_base
-                rows.append({
-                    "full": full,
-                    "provider": provider_id,
-                    "model": m["id"],
-                    "name": m.get("name") or m["id"],
-                    "api": api,
-                    "baseUrl": base_url,
-                    "apiKey": provider_key or "",
-                    "apiKeyEnv": env_name_for(provider_id),
-                    "maxTokens": cfg.get("maxTokens"),
-                    "providerConfig": {k: v for k, v in provider.items() if k not in {"apiKey", "models"}},
-                    "modelConfig": cfg,
-                })
-    return rows
-
-
-def present_error_recovery(
-    root: Path,
-    error: Exception,
-    current_model: str,
-    current_api: str,
-    current_base_url: str,
-    no_recover: bool = False,
-) -> dict | None:
-    """Show error info and offer model switching.
-
-    Returns a new model dict to retry with, or None to abort.
-    If no_recover is True, prints suggestion text and returns None."""
-    full_current = current_model
-    # Try to build full provider/model ref if short
-    if "/" not in full_current and "'system_model'" not in current_model:
-        direct_cfg, _ = read_global_direct_api()
-        if direct_cfg and direct_cfg.get("systemModel"):
-            full_current = direct_cfg["systemModel"]
-
-    print("\n" + "═" * 60, file=sys.stderr)
-    print("❌ Direct API 调用失败", file=sys.stderr)
-    print("═" * 60, file=sys.stderr)
-    print(f"  失败模型:  {current_model}", file=sys.stderr)
-    print(f"  API 协议:  {current_api}", file=sys.stderr)
-    print(f"  Base URL:  {current_base_url}", file=sys.stderr)
-    print(f"  错误信息:  {str(error)[:300]}", file=sys.stderr)
-
-    # Try to diagnose
-    err_str = str(error).lower()
-    suggestions: list[str] = []
-    if "401" in err_str or "403" in err_str or "unauthorized" in err_str or "invalid api key" in err_str:
-        suggestions.append("💡 API Key 可能无效或过期，请检查环境变量或全局 global-config.json")
-    if "404" in err_str or "not found" in err_str:
-        suggestions.append("💡 模型名称或 Base URL 可能不正确")
-    if "429" in err_str or "rate" in err_str or "quota" in err_str:
-        suggestions.append("💡 触发限流，建议等待后重试或切换模型 / provider")
-    if "schema" in err_str or "tool" in err_str or "payload" in err_str:
-        suggestions.append("💡 请求格式被 provider 拒绝，可能是 API 协议不匹配")
-        suggestions.append("   → 尝试切换到 openai-completions 协议的模型（如 lsj/gpt-5.4）")
-    if "timeout" in err_str or "timed out" in err_str:
-        suggestions.append("💡 请求超时，可尝试更轻量的模型或减少输入量")
-    if not suggestions:
-        suggestions.append("💡 可能是临时网络问题，或模型暂时不可用")
-
-    for s in suggestions:
-        print(f"  {s}", file=sys.stderr)
-    print(file=sys.stderr)
-
-    # Discover alternatives
-    alternatives = discover_alternative_models(full_current)
-
-    if no_recover:
-        if alternatives:
-            print("📋 可切换的模型（去掉 --no-recover 启用交互式恢复）:", file=sys.stderr)
-            for i, alt in enumerate(alternatives[:8], 1):
-                icon = "🔵" if alt["api"] == "openai-completions" else "🟢"
-                print(f"  [{i}] {icon} {alt['full']} ({alt['api']}) — {alt['baseUrl']}", file=sys.stderr)
-            print(f"\n  下次调用时加 --model {alternatives[0]['full']} 即可切换", file=sys.stderr)
-        return None
-
-    if not alternatives:
-        print("⚠️  未找到其他可用模型", file=sys.stderr)
-        return None
-
-    print("📋 可选替代模型:", file=sys.stderr)
-    for i, alt in enumerate(alternatives[:8], 1):
-        icon = "🔵" if alt["api"] == "openai-completions" else "🟢"
-        print(f"  [{i}] {icon} {alt['full']:35s} {alt['api']:22s} {alt['baseUrl']}", file=sys.stderr)
-    print(f"  [s] 💾 保存当前配置（跳过本次）", file=sys.stderr)
-    print(f"  [0] ❌ 放弃", file=sys.stderr)
-    print(file=sys.stderr)
-
-    while True:
-        try:
-            choice = input("👉 选择一个模型编号重试: ").strip()
-        except (EOFError, KeyboardInterrupt):
-            print(file=sys.stderr)
-            return None
-        if choice == "0":
-            return None
-        if choice.lower() == "s":
-            return {"__save_config__": True}
-        if choice.isdigit():
-            idx = int(choice) - 1
-            if 0 <= idx < len(alternatives):
-                return alternatives[idx]
-        print(f"  无效选择: {choice}", file=sys.stderr)
-
-
 # write_direct_api_config removed — model config is now global only.
+# present_error_recovery removed — error recovery is now delegated to system model.
+
+
+def _auto_fallback_to_system(direct_cfg: dict | None) -> tuple[bool, str]:
+    """Auto-switch workMode to 'system' on API failure.
+    Returns (switched, previous_mode)."""
+    if not GLOBAL_CONFIG_PATH.exists():
+        return False, "config_missing"
+    try:
+        full_cfg = json.loads(GLOBAL_CONFIG_PATH.read_text(encoding="utf-8"))
+        old_mode = full_cfg.get("workMode", "direct")
+        if old_mode == "system":
+            return False, "already_system"
+        full_cfg["workMode"] = "system"
+        GLOBAL_CONFIG_PATH.write_text(json.dumps(full_cfg, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        return True, old_mode
+    except Exception as write_err:
+        return False, f"write_error: {write_err}"
 
 
 def update_api_call_log(record: dict) -> None:
@@ -561,7 +391,6 @@ def main() -> int:
     ap.add_argument("--max-total-chars", type=int, default=120000)
     ap.add_argument("--prompt-profile", default="draft", choices=["draft", "rewrite", "humanize", "review"])
     ap.add_argument("--instruction", default="")
-    ap.add_argument("--no-recover", action="store_true", help="skip interactive model switching on error")
     mode = ap.add_mutually_exclusive_group()
     mode.add_argument("--dry-run", action="store_true", help="write request preview only; default")
     mode.add_argument("--execute", action="store_true", help="perform real API call")
@@ -723,148 +552,167 @@ def main() -> int:
         print(f"missing api key env: {api_key_env}", file=sys.stderr)
         return 2
 
-    # Retry loop with model recovery on error
-    current_model = model
-    current_api = api
-    current_base_url = base_url
-    current_api_key = api_key
-    system_model_info = system_model
-    attempt = 0
+    # --- Execute ---
+    out_dir = root / ".novel-studio" / "outputs"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    stamp = utc_stamp()
+    base = out_dir / f"{chapter_id}-direct-api-{stamp}"
+    preview_path = base.with_suffix(".request.json")
+    manifest_path = base.with_suffix(".manifest.json")
+    output_path = base.with_suffix(".md")
 
-    while True:
-        attempt += 1
-        if attempt > 1:
-            print(f"\n🔄 第 {attempt} 次尝试 — 模型: {current_model}", file=sys.stderr)
+    preview_payload = dict(payload)
+    preview_path.write_text(json.dumps(preview_payload, ensure_ascii=False, indent=2), encoding="utf-8")
 
-        # Build payload for current model
-        if current_api == "openai-completions":
-            payload = {
-                "model": current_model,
-                "messages": messages,
-                "temperature": args.temperature,
-                "max_tokens": args.max_tokens,
-            }
-        elif current_api == "anthropic-messages":
-            payload = anthropic_messages_payload(current_model, messages, args.temperature, args.max_tokens)
+    manifest = {
+        "projectRoot": str(root),
+        "project": project_name,
+        "chapterId": chapter_id,
+        "inputPack": str(input_pack.relative_to(root)),
+        "includedFiles": [{"path": item.rel, "chars": item.chars} for item in included],
+        "promptProfile": args.prompt_profile,
+        "model": model,
+        "api": api,
+        "configuredSystemModel": direct_cfg.get("systemModel") if isinstance(direct_cfg, dict) else None,
+        "configuredModel": direct_cfg.get("model") if isinstance(direct_cfg, dict) else None,
+        "resolvedModelConfig": redact_secrets(resolved_model_config),
+        "resolvedProviderConfig": redact_secrets(resolved_provider_config),
+        "baseUrl": base_url.rstrip("/") if base_url else "BASE_URL_NOT_SET",
+        "apiKeyEnv": api_key_env,
+        "execute": True,
+        "temperature": args.temperature,
+        "maxTokens": args.max_tokens,
+        "requestPreview": str(preview_path.relative_to(root)),
+        "output": str(output_path.relative_to(root)),
+        "createdAtUtc": datetime.now(timezone.utc).isoformat(),
+    }
+
+    started = time.time()
+    try:
+        if api == "openai-completions":
+            response = chat_completions(base_url, api_key, payload, args.timeout)
+        elif api == "anthropic-messages":
+            response = anthropic_messages(base_url, api_key, payload, args.timeout)
         else:
-            print(f"unsupported direct API protocol: {current_api}", file=sys.stderr)
-            return 2
+            raise RuntimeError(f"unsupported direct API protocol: {api}")
+        content = extract_response_text(api, response)
+        if not content:
+            content = json.dumps(response, ensure_ascii=False, indent=2)
+        output_path.write_text(content, encoding="utf-8")
+        elapsed = round(time.time() - started, 3)
+        manifest["status"] = "ok"
+        manifest["elapsedSeconds"] = elapsed
+        usage = response.get("usage")
+        if usage:
+            manifest["usage"] = usage
+        manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
+        print(f"output written: {output_path}")
+        print(f"manifest written: {manifest_path}")
+        log_record = build_log_record(
+            project_root=str(root),
+            chapter_id=chapter_id, model=model, api=api, base_url=base_url,
+            temperature=args.temperature, max_tokens=args.max_tokens,
+            prompt_profile=args.prompt_profile, included=included,
+            execute=True, status="ok",
+            elapsed_seconds=elapsed,
+            output_chars=len(content),
+            usage=usage,
+            request_preview=str(preview_path.relative_to(root)),
+            manifest_path=str(manifest_path.relative_to(root)),
+            output_path=str(output_path.relative_to(root)),
+        )
+        update_api_call_log(log_record)
+        return 0
 
-        out_dir = root / ".novel-studio" / "outputs"
-        out_dir.mkdir(parents=True, exist_ok=True)
-        stamp = utc_stamp()
-        base = out_dir / f"{chapter_id}-direct-api-{stamp}"
-        preview_path = base.with_suffix(".request.json")
-        manifest_path = base.with_suffix(".manifest.json")
-        output_path = base.with_suffix(".md")
+    except Exception as e:
+        elapsed = round(time.time() - started, 3)
+        manifest["status"] = "error"
+        manifest["error"] = str(e)
+        manifest["elapsedSeconds"] = elapsed
+        manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
 
-        preview_payload = dict(payload)
-        preview_path.write_text(json.dumps(preview_payload, ensure_ascii=False, indent=2), encoding="utf-8")
+        log_record = build_log_record(
+            project_root=str(root),
+            chapter_id=chapter_id, model=model, api=api, base_url=base_url,
+            temperature=args.temperature, max_tokens=args.max_tokens,
+            prompt_profile=args.prompt_profile, included=included,
+            execute=True, status="error",
+            elapsed_seconds=elapsed,
+            error=str(e),
+            request_preview=str(preview_path.relative_to(root)),
+            manifest_path=str(manifest_path.relative_to(root)),
+        )
+        update_api_call_log(log_record)
 
-        manifest = {
-            "projectRoot": str(root),
-            "project": project_name,
-            "chapterId": chapter_id,
-            "inputPack": str(input_pack.relative_to(root)),
-            "includedFiles": [{"path": item.rel, "chars": item.chars} for item in included],
-            "promptProfile": args.prompt_profile,
-            "model": current_model,
-            "api": current_api,
-            "configuredSystemModel": direct_cfg.get("systemModel") if isinstance(direct_cfg, dict) else None,
-            "configuredModel": direct_cfg.get("model") if isinstance(direct_cfg, dict) else None,
-            "resolvedModelConfig": redact_secrets(system_model_info.get("modelConfig") if system_model_info else None),
-            "resolvedProviderConfig": redact_secrets(system_model_info.get("providerConfig") if system_model_info else None),
-            "baseUrl": current_base_url.rstrip("/") if current_base_url else "BASE_URL_NOT_SET",
-            "apiKeyEnv": api_key_env,
-            "execute": True,
-            "temperature": args.temperature,
-            "maxTokens": args.max_tokens,
-            "requestPreview": str(preview_path.relative_to(root)),
-            "output": str(output_path.relative_to(root)),
-            "createdAtUtc": datetime.now(timezone.utc).isoformat(),
+        # Diagnose error and suggest next steps
+        err_str = str(e).lower()
+        suggestions: list[str] = []
+        if "401" in err_str or "403" in err_str or "unauthorized" in err_str or "invalid api key" in err_str:
+            suggestions.append("API Key 可能无效或过期")
+        if "404" in err_str or "not found" in err_str:
+            suggestions.append("模型名称或 Base URL 可能不正确")
+        if "429" in err_str or "rate" in err_str or "quota" in err_str:
+            suggestions.append("触发限流，建议等待后重试或切换模型")
+        if "schema" in err_str or "tool" in err_str or "payload" in err_str:
+            suggestions.append("请求格式被 provider 拒绝，可能是 API 协议不匹配")
+        if "timeout" in err_str or "timed out" in err_str:
+            suggestions.append("请求超时，可尝试更轻量的模型或减少输入量")
+        if not suggestions:
+            suggestions.append("可能是临时网络问题，或模型暂时不可用")
+
+        # Auto-fallback: switch workMode to system model
+        fallback_switched, fallback_prev = _auto_fallback_to_system(direct_cfg)
+
+        # Record session failure via ns_session.py
+        _ns_session_path = Path(__file__).resolve().parent / "ns_session.py"
+        if _ns_session_path.exists():
+            try:
+                subprocess.run(
+                    [sys.executable, str(_ns_session_path), "fail", str(root),
+                     "--error", str(e)[:500],
+                     "--suggestions", "; ".join(suggestions)],
+                    capture_output=True, timeout=10,
+                )
+            except Exception:
+                pass  # session recording is best-effort
+
+        # Output structured error for system model to handle recovery
+        error_output = {
+            "ns_direct_api_error": {
+                "model": model,
+                "api": api,
+                "baseUrl": base_url.rstrip("/") if base_url else "",
+                "error": str(e)[:500],
+                "suggestions": suggestions,
+                "chapterId": chapter_id,
+                "project": project_name,
+                "manifestPath": str(manifest_path.relative_to(root)),
+                "configMode": (direct_cfg or {}).get("configMode", ""),
+                "systemModel": (direct_cfg or {}).get("systemModel", ""),
+                "fallbackToSystem": fallback_switched,
+                "previousWorkMode": fallback_prev,
+            }
         }
 
-        started = time.time()
-        try:
-            if current_api == "openai-completions":
-                response = chat_completions(current_base_url, current_api_key, payload, args.timeout)
-            elif current_api == "anthropic-messages":
-                response = anthropic_messages(current_base_url, current_api_key, payload, args.timeout)
-            else:
-                raise RuntimeError(f"unsupported direct API protocol: {current_api}")
-            content = extract_response_text(current_api, response)
-            if not content:
-                content = json.dumps(response, ensure_ascii=False, indent=2)
-            output_path.write_text(content, encoding="utf-8")
-            elapsed = round(time.time() - started, 3)
-            manifest["status"] = "ok"
-            manifest["elapsedSeconds"] = elapsed
-            usage = response.get("usage")
-            if usage:
-                manifest["usage"] = usage
-            manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
-            print(f"output written: {output_path}")
-            print(f"manifest written: {manifest_path}")
-            log_record = build_log_record(
-                project_root=str(root),
-                chapter_id=chapter_id, model=current_model, api=current_api, base_url=current_base_url,
-                temperature=args.temperature, max_tokens=args.max_tokens,
-                prompt_profile=args.prompt_profile, included=included,
-                execute=True, status="ok",
-                elapsed_seconds=elapsed,
-                output_chars=len(content),
-                usage=usage,
-                request_preview=str(preview_path.relative_to(root)),
-                manifest_path=str(manifest_path.relative_to(root)),
-                output_path=str(output_path.relative_to(root)),
-            )
-            update_api_call_log(log_record)
-            return 0
+        print("\n" + "=" * 60, file=sys.stderr)
+        print("❌ Direct API 调用失败", file=sys.stderr)
+        print("=" * 60, file=sys.stderr)
+        print(f"  模型:     {model}", file=sys.stderr)
+        print(f"  API:      {api}", file=sys.stderr)
+        print(f"  Base URL: {base_url}", file=sys.stderr)
+        print(f"  错误:     {str(e)[:300]}", file=sys.stderr)
+        for s in suggestions:
+            print(f"  💡 {s}", file=sys.stderr)
+        if fallback_switched:
+            print(file=sys.stderr)
+            print("🔄 已自动切换工作模式: 直连模式 → 系统模型", file=sys.stderr)
+            print("   系统模型已接管，将继续处理你的请求。", file=sys.stderr)
+            print("   稍后可用「配置模型」重新设置直连 API。", file=sys.stderr)
+        print(file=sys.stderr)
+        print("═══ NS_DIRECT_API_ERROR " + json.dumps(error_output, ensure_ascii=False), file=sys.stderr)
+        print(file=sys.stderr)
 
-        except Exception as e:
-            elapsed = round(time.time() - started, 3)
-            manifest["status"] = "error"
-            manifest["error"] = str(e)
-            manifest["elapsedSeconds"] = elapsed
-            manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
-            log_record = build_log_record(
-                project_root=str(root),
-                chapter_id=chapter_id, model=current_model, api=current_api, base_url=current_base_url,
-                temperature=args.temperature, max_tokens=args.max_tokens,
-                prompt_profile=args.prompt_profile, included=included,
-                execute=True, status="error",
-                elapsed_seconds=elapsed,
-                error=str(e),
-                request_preview=str(preview_path.relative_to(root)),
-                manifest_path=str(manifest_path.relative_to(root)),
-            )
-            update_api_call_log(log_record)
-
-            # Recovery
-            recovery = present_error_recovery(
-                root, e, current_model, current_api, current_base_url,
-                no_recover=args.no_recover,
-            )
-
-            if recovery is None:
-                print("❌ 已放弃", file=sys.stderr)
-                return 3
-
-            if recovery.get("__save_config__"):
-                print(f"💾 已保存当前配置（跳过本次）", file=sys.stderr)
-                return 3
-
-            # Switch model and retry
-            current_model = recovery["model"]
-            current_api = recovery["api"]
-            current_base_url = recovery["baseUrl"]
-            current_api_key = recovery.get("apiKey") or os.environ.get(recovery.get("apiKeyEnv", ""), "")
-            system_model_info = recovery
-            if not current_api_key:
-                print(f"⚠️  新模型缺少 API Key，请设置环境变量 {recovery.get('apiKeyEnv', '')}", file=sys.stderr)
-                return 3
-            print(f"🔄 切换至 {recovery['full']} 重试中...", file=sys.stderr)
-            continue
+        return 3
 
 
 if __name__ == "__main__":
