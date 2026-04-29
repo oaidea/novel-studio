@@ -72,9 +72,27 @@ CHAPTER_PROGRESS = """# 章节进度记录\n\n## 当前章节状态\n- ch_001：
 
 OUTLINE_NEXT_CHAPTERS = """# 近章规划\n\n## 当前近章目标\n- \n\n## 承接点\n- \n\n## 近期风险\n- \n"""
 
-NOVEL_STUDIO_README = """# .novel-studio\n\n这是项目的结构化工作内核，存放：\n- 项目状态\n- 章节元数据\n- chapter summary\n- chapter packet\n- active indexes\n- workflow logs\n- clip indexes / Clip 资产索引\n"""
+NOVEL_STUDIO_README = """# .novel-studio
 
-ACTIVE_INDEX_PLACEHOLDER = """# {title}\n\n- 暂无\n"""
+这是项目的结构化工作内核，存放：
+- `config.json`：Novel Studio 项目级运行配置（如 directApi），不放 API key
+- `state.json`：小说项目状态
+- `chapter-meta.json`：章节元数据
+- chapter summary
+- chapter packet
+- active indexes
+- workflow logs
+- clip indexes / Clip 资产索引
+"""
+
+CONFIG_TEMPLATE = {
+    "directApi": None,
+}
+
+ACTIVE_INDEX_PLACEHOLDER = """# {title}
+
+- 暂无
+"""
 
 STATE_TEMPLATE = {
     "project": "",
@@ -213,6 +231,7 @@ def main() -> int:
     state = dict(STATE_TEMPLATE)
     state["project"] = root.name
     state["last_updated"] = today
+    ensure_json(root / ".novel-studio" / "config.json", CONFIG_TEMPLATE)
     ensure_json(root / ".novel-studio" / "state.json", state)
     ensure_json(root / ".novel-studio" / "chapter-meta.json", CHAPTER_META_TEMPLATE)
 

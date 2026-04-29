@@ -160,13 +160,30 @@ def main() -> int:
     base_url = args.base_url
     model = args.model
     api_key_env = args.api_key_env
-    project_cfg = root / ".novel-studio" / "state.json"
+    project_cfg = root / ".novel-studio" / "config.json"
+    legacy_state_cfg = root / ".novel-studio" / "state.json"
     legacy_project_cfg = root / ".novel-studio" / "direct-api-config.json"
     has_project_config = False
     cfg_source = project_cfg
     if project_cfg.exists():
         try:
-            state_cfg = json.loads(project_cfg.read_text(encoding="utf-8"))
+            ns_cfg = json.loads(project_cfg.read_text(encoding="utf-8"))
+            cfg = ns_cfg.get("directApi") if isinstance(ns_cfg, dict) else None
+            if isinstance(cfg, dict):
+                has_project_config = True
+                base_url = base_url or cfg.get("baseUrl", "")
+                model = model or cfg.get("model", "")
+                api_key_env = args.api_key_env if args.api_key_env != DEFAULT_API_KEY_ENV else cfg.get("apiKeyEnv", args.api_key_env)
+                if args.temperature == 0.7 and cfg.get("temperature") is not None:
+                    args.temperature = float(cfg.get("temperature"))
+                if args.max_tokens == 6000 and cfg.get("maxTokens") is not None:
+                    args.max_tokens = int(cfg.get("maxTokens"))
+        except Exception as e:
+            print(f"warning: failed to read direct API config: {e}", file=sys.stderr)
+    if not has_project_config and legacy_state_cfg.exists():
+        cfg_source = legacy_state_cfg
+        try:
+            state_cfg = json.loads(legacy_state_cfg.read_text(encoding="utf-8"))
             cfg = state_cfg.get("directApi") if isinstance(state_cfg, dict) else None
             if isinstance(cfg, dict):
                 has_project_config = True
@@ -178,7 +195,7 @@ def main() -> int:
                 if args.max_tokens == 6000 and cfg.get("maxTokens") is not None:
                     args.max_tokens = int(cfg.get("maxTokens"))
         except Exception as e:
-            print(f"warning: failed to read direct API config from state: {e}", file=sys.stderr)
+            print(f"warning: failed to read legacy direct API config from state: {e}", file=sys.stderr)
     if not has_project_config and legacy_project_cfg.exists():
         cfg_source = legacy_project_cfg
         has_project_config = True

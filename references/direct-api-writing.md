@@ -63,7 +63,7 @@ python3 scripts/ns_model_config.py init <project-dir> --select lsj/gpt-5.5 --non
 python3 scripts/ns_model_config.py init <project-dir> --select 1 --non-interactive
 ```
 
-它会写入 `state.json` 的 `directApi` 字段：
+它会写入 `config.json` 的 `directApi` 字段：
 
 ```json
 {
@@ -89,7 +89,7 @@ export NOVEL_STUDIO_BASE_URL='https://api.example.com/v1'
 export NOVEL_STUDIO_MODEL='model-name'
 ```
 
-也可命令行覆盖；命令行参数优先于 `.novel-studio/state.json` 的 `directApi` 配置：
+也可命令行覆盖；命令行参数优先于 `.novel-studio/config.json` 的 `directApi` 配置：
 
 ```bash
 python3 scripts/direct_api_writer.py <project-dir> ch_005 \
@@ -153,7 +153,7 @@ python3 scripts/workflow_runner.py <project-dir> ch_005 chapter-full
 python3 scripts/ns_model_config.py init <project-dir>
 ```
 
-没有 `.novel-studio/state.json` 的 `directApi` 配置且未显式传入 `--model` + `--base-url` 时，direct writer 会直接退出并提示配置模型，不生成 `MODEL_NOT_SET` 请求。
+没有 `.novel-studio/config.json` 的 `directApi` 配置且未显式传入 `--model` + `--base-url` 时，direct writer 会直接退出并提示配置模型，不生成 `MODEL_NOT_SET` 请求。
 
 ```bash
 python3 scripts/direct_api_writer.py <project-dir> ch_005 --dry-run

@@ -144,6 +144,10 @@ def env_name_for(provider: str) -> str:
     return KEY_ENV_PREFIX + safe
 
 
+def project_config_path(root: Path) -> Path:
+    return root / ".novel-studio" / "config.json"
+
+
 def project_state_path(root: Path) -> Path:
     return root / ".novel-studio" / "state.json"
 
@@ -171,22 +175,41 @@ def build_direct_api_config(row: dict, key_env: str | None) -> dict:
 def write_project_config(root: Path, row: dict, key_env: str | None) -> Path:
     ns = root / ".novel-studio"
     ns.mkdir(parents=True, exist_ok=True)
+    config_path = project_config_path(root)
+    config = {}
+    if config_path.exists():
+        try:
+            config = json.loads(config_path.read_text(encoding="utf-8"))
+        except Exception:
+            config = {}
+    config["directApi"] = build_direct_api_config(row, key_env)
+    config_path.write_text(json.dumps(config, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    # Clean up accidental state.json directApi from older builds.
     state_path = project_state_path(root)
-    state = {}
     if state_path.exists():
         try:
             state = json.loads(state_path.read_text(encoding="utf-8"))
+            if isinstance(state, dict) and "directApi" in state:
+                state.pop("directApi", None)
+                state_path.write_text(json.dumps(state, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         except Exception:
-            state = {}
-    state["directApi"] = build_direct_api_config(row, key_env)
-    state_path.write_text(json.dumps(state, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+            pass
     legacy = legacy_config_path(root)
     if legacy.exists():
         legacy.rename(legacy.with_suffix(".json.legacy"))
-    return state_path
+    return config_path
 
 
 def read_project_config(root: Path) -> tuple[dict | None, Path]:
+    config_path = project_config_path(root)
+    if config_path.exists():
+        try:
+            config = json.loads(config_path.read_text(encoding="utf-8"))
+            cfg = config.get("directApi")
+            if isinstance(cfg, dict):
+                return cfg, config_path
+        except Exception:
+            pass
     state_path = project_state_path(root)
     if state_path.exists():
         try:
@@ -210,7 +233,8 @@ def read_project_config(root: Path) -> tuple[dict | None, Path]:
 def show_project(root: Path) -> int:
     cfg, path = read_project_config(root)
     if not cfg:
-        print(f"direct API config not found in: {project_state_path(root)}")
+        print(f"direct API config not found in: {project_config_path(root)}")
+        print(f"legacy state directApi also not found: {project_state_path(root)}")
         print(f"legacy config also not found: {legacy_config_path(root)}")
         return 1
     print(json.dumps({"configPath": str(path), "directApi": cfg}, ensure_ascii=False, indent=2))
@@ -254,7 +278,7 @@ def main() -> int:
         if not row["supportedDirectApi"]:
             print(f"warning: selected model api '{row['api']}' is not directly supported by direct_api_writer.py", file=sys.stderr)
         cfg = write_project_config(root, row, args.api_key_env)
-        print(f"wrote direct API config into state: {cfg}")
+        print(f"wrote direct API config: {cfg}")
         print(f"selected: {row['full']}")
         print(f"api key env: {args.api_key_env or env_name_for(row['provider'])}")
         return 0
