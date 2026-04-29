@@ -63,10 +63,18 @@ python3 scripts/ns_model_config.py init <project-dir> --select lsj/gpt-5.5 --non
 python3 scripts/ns_model_config.py init <project-dir> --select 1 --non-interactive
 ```
 
-它会写入：
+它会写入 `state.json` 的 `directApi` 字段：
 
-```text
-.novel-studio/direct-api-config.json
+```json
+{
+  "directApi": {
+    "provider": "lsj",
+    "model": "gpt-5.5",
+    "modelFull": "lsj/gpt-5.5",
+    "baseUrl": "https://codex.ooooo.codes/v1",
+    "apiKeyEnv": "NOVEL_STUDIO_API_KEY_LSJ"
+  }
+}
 ```
 
 注意：该文件**不复制 OpenClaw 的 API key**，只记录 provider / model / baseUrl / apiKeyEnv。真实执行前仍需 export 对应环境变量。
@@ -81,7 +89,7 @@ export NOVEL_STUDIO_BASE_URL='https://api.example.com/v1'
 export NOVEL_STUDIO_MODEL='model-name'
 ```
 
-也可命令行覆盖；命令行参数优先于 `.novel-studio/direct-api-config.json`：
+也可命令行覆盖；命令行参数优先于 `.novel-studio/state.json` 的 `directApi` 配置：
 
 ```bash
 python3 scripts/direct_api_writer.py <project-dir> ch_005 \
@@ -145,7 +153,7 @@ python3 scripts/workflow_runner.py <project-dir> ch_005 chapter-full
 python3 scripts/ns_model_config.py init <project-dir>
 ```
 
-没有 `.novel-studio/direct-api-config.json` 且未显式传入 `--model` + `--base-url` 时，direct writer 会直接退出并提示配置模型，不生成 `MODEL_NOT_SET` 请求。
+没有 `.novel-studio/state.json` 的 `directApi` 配置且未显式传入 `--model` + `--base-url` 时，direct writer 会直接退出并提示配置模型，不生成 `MODEL_NOT_SET` 请求。
 
 ```bash
 python3 scripts/direct_api_writer.py <project-dir> ch_005 --dry-run

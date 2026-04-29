@@ -54,7 +54,7 @@
 
 **默认规则：**
 - 不跨模式乱跳。
-- **NS 模型隔离硬规则**：凡是需要模型生成、判断或改写内容的 NS 任务（写作、续写、重写、审校、润色/去AI味、风格提炼、学习诊断、镜头跟随判断、第三方描述判断、场景张力判断、信息释放判断等），必须先确认项目存在 `.novel-studio/direct-api-config.json`，并通过 `scripts/direct_api_writer.py` 或后续 direct API 执行器处理；不得直接使用当前聊天系统模型代写、代审或代润色。
+- **NS 模型隔离硬规则**：凡是需要模型生成、判断或改写内容的 NS 任务（写作、续写、重写、审校、润色/去AI味、风格提炼、学习诊断、镜头跟随判断、第三方描述判断、场景张力判断、信息释放判断等），必须先确认项目存在 `.novel-studio/state.json` 的 `directApi` 配置，并通过 `scripts/direct_api_writer.py` 或后续 direct API 执行器处理；不得直接使用当前聊天系统模型代写、代审或代润色。
 - **允许不配模型的 NS 文件工具**：项目初始化、目录治理、索引刷新、chapter-full/input-pack 生成、doctor/smoke/naming/consistency 等确定性脚本可以直接运行；但输出只能作为文件状态或脚手架结果，不能冒充模型写作判断。
 - 若项目缺少 direct API 配置，先提示并执行/建议：`python3 scripts/ns_model_config.py init <project-dir>`；配置完成前停止内容生成类 NS 任务。
 - 若缺少必要输入，先补关键约束，再继续。
@@ -419,7 +419,7 @@ novels/<项目名>/
 - `scripts/scene_tension_check.py`：轻量检查场景张力风险（阻力/代价不足、对白空转、纯气氛静态段）
 - `scripts/information_release_check.py`：轻量检查信息释放风险（解释腔、真相/机制词过密、已知信息对白）
 - `scripts/direct_api_writer.py`：从 input pack 组装隔离请求并可选调用 OpenAI-compatible Chat Completions API；默认 dry-run，输出到 `.novel-studio/outputs/`
-- `scripts/ns_model_config.py`：读取 OpenClaw 系统模型配置并为项目初始化 `.novel-studio/direct-api-config.json`，支持列出模型、交互选择或按 alias/full id 选择
+- `scripts/ns_model_config.py`：读取 OpenClaw 系统模型配置并为项目初始化 `.novel-studio/state.json` 的 `directApi` 配置，支持列出模型、交互选择或按 alias/full id 选择
 - `scripts/workflow_runner.py`：串行触发最小 workflow chain（支持 startup / style / style-full / chapter-full / writeback / refresh / deps / deps-all / doctor / full 模式）
 
 ---
@@ -651,7 +651,7 @@ novels/<项目名>/
 
 ## 十四、输出约束
 
-- **NS 内容任务必须走项目 direct API 配置**：没有 `.novel-studio/direct-api-config.json` 时，不写正文、不续写、不审校、不润色、不做风格判断；先要求配置模型。
+- **NS 内容任务必须走项目 direct API 配置**：没有 `.novel-studio/state.json` 的 `directApi` 配置时，不写正文、不续写、不审校、不润色、不做风格判断；先要求配置模型。
 - **不要擅自推进到下一章**，除非用户明确要求
 - **不要偷改核心设定**，涉及根设变更必须先说明影响
 - **不要把项目管理内容写进正文**

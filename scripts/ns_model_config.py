@@ -144,11 +144,16 @@ def env_name_for(provider: str) -> str:
     return KEY_ENV_PREFIX + safe
 
 
-def write_project_config(root: Path, row: dict, key_env: str | None) -> Path:
-    ns = root / ".novel-studio"
-    ns.mkdir(parents=True, exist_ok=True)
-    cfg_path = ns / "direct-api-config.json"
-    data = {
+def project_state_path(root: Path) -> Path:
+    return root / ".novel-studio" / "state.json"
+
+
+def legacy_config_path(root: Path) -> Path:
+    return root / ".novel-studio" / "direct-api-config.json"
+
+
+def build_direct_api_config(row: dict, key_env: str | None) -> dict:
+    return {
         "provider": row["provider"],
         "model": row["model"],
         "modelFull": row["full"],
@@ -161,16 +166,54 @@ def write_project_config(root: Path, row: dict, key_env: str | None) -> Path:
         "source": row.get("source") or "",
         "note": "API key is not copied from OpenClaw config. Export the apiKeyEnv variable before --execute.",
     }
-    cfg_path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    return cfg_path
+
+
+def write_project_config(root: Path, row: dict, key_env: str | None) -> Path:
+    ns = root / ".novel-studio"
+    ns.mkdir(parents=True, exist_ok=True)
+    state_path = project_state_path(root)
+    state = {}
+    if state_path.exists():
+        try:
+            state = json.loads(state_path.read_text(encoding="utf-8"))
+        except Exception:
+            state = {}
+    state["directApi"] = build_direct_api_config(row, key_env)
+    state_path.write_text(json.dumps(state, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    legacy = legacy_config_path(root)
+    if legacy.exists():
+        legacy.rename(legacy.with_suffix(".json.legacy"))
+    return state_path
+
+
+def read_project_config(root: Path) -> tuple[dict | None, Path]:
+    state_path = project_state_path(root)
+    if state_path.exists():
+        try:
+            state = json.loads(state_path.read_text(encoding="utf-8"))
+            cfg = state.get("directApi")
+            if isinstance(cfg, dict):
+                return cfg, state_path
+        except Exception:
+            pass
+    legacy = legacy_config_path(root)
+    if legacy.exists():
+        try:
+            cfg = json.loads(legacy.read_text(encoding="utf-8"))
+            if isinstance(cfg, dict):
+                return cfg, legacy
+        except Exception:
+            pass
+    return None, state_path
 
 
 def show_project(root: Path) -> int:
-    cfg = root / ".novel-studio" / "direct-api-config.json"
-    if not cfg.exists():
-        print(f"direct API config not found: {cfg}")
+    cfg, path = read_project_config(root)
+    if not cfg:
+        print(f"direct API config not found in: {project_state_path(root)}")
+        print(f"legacy config also not found: {legacy_config_path(root)}")
         return 1
-    print(cfg.read_text(encoding="utf-8"))
+    print(json.dumps({"configPath": str(path), "directApi": cfg}, ensure_ascii=False, indent=2))
     return 0
 
 
@@ -211,7 +254,7 @@ def main() -> int:
         if not row["supportedDirectApi"]:
             print(f"warning: selected model api '{row['api']}' is not directly supported by direct_api_writer.py", file=sys.stderr)
         cfg = write_project_config(root, row, args.api_key_env)
-        print(f"wrote direct API config: {cfg}")
+        print(f"wrote direct API config into state: {cfg}")
         print(f"selected: {row['full']}")
         print(f"api key env: {args.api_key_env or env_name_for(row['provider'])}")
         return 0
