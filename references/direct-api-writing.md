@@ -155,6 +155,20 @@ python3 scripts/ns_model_config.py init <project-dir>
 python3 scripts/direct_api_writer.py <project-dir> ch_005 --dry-run
 ```
 
+### 3. 校验配置模型是否仍存在
+
+如果 OpenClaw 系统模型 ID 变更或被删除，NS 会报错并要求重新选择。也可以手动校验：
+
+```bash
+python3 scripts/ns_model_config.py validate <project-dir>
+```
+
+校验失败时，重新运行：
+
+```bash
+python3 scripts/ns_model_config.py init <project-dir>
+```
+
 ### 3. 明确执行真实请求
 
 ```bash

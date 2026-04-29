@@ -15,7 +15,7 @@
 - `scripts/scene_tension_check.py`：轻量检查场景张力风险（阻力/代价不足、对白空转、纯气氛静态段）
 - `scripts/information_release_check.py`：轻量检查信息释放风险（解释腔、真相/机制词过密、已知信息对白）
 - `scripts/direct_api_writer.py`：从 input pack 组装隔离请求并可选调用 OpenAI-compatible Chat Completions API；默认 dry-run，输出到 `.novel-studio/outputs/`
-- `scripts/ns_model_config.py`：读取 OpenClaw 系统模型配置并为项目初始化 `.novel-studio/config.json` 的 `directApi` 配置，支持列出模型、交互选择或按 alias/full id 选择
+- `scripts/ns_model_config.py`：读取 OpenClaw 系统模型配置并为项目初始化 `.novel-studio/config.json` 的 `directApi` 配置，支持列出模型、交互选择、按 alias/full id 选择，并校验已选模型是否仍存在
 - `scripts/governance_audit.py`：审计 layered 项目是否存在治理漂移（目录缺失、state/meta 漏项、入口引用失效等）
 - `scripts/consistency_audit.py`：审计 state / chapter-meta / chapter files / packet-first 产物是否互相一致
 - `scripts/naming_lint.py`：审计文件命名是否出现状态塞进文件名、final-v2 漂移、对象区非 kebab-case 等命名坏味道

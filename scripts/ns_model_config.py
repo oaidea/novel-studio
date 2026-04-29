@@ -187,6 +187,35 @@ def read_project_config(root: Path) -> tuple[dict | None, Path]:
     return None, config_path
 
 
+def validate_project(root: Path) -> int:
+    cfg, path = read_project_config(root)
+    if not cfg or not cfg.get("model"):
+        print(f"direct API model is not configured in: {project_config_path(root)}", file=sys.stderr)
+        print(f"hint: run scripts/ns_model_config.py init {root}", file=sys.stderr)
+        return 2
+    model_ref = cfg.get("model")
+    rows = discover()
+    matched = resolve_selection(rows, model_ref)
+    if not matched:
+        print(f"configured model no longer exists in OpenClaw system models: {model_ref}", file=sys.stderr)
+        print("hint: run scripts/ns_model_config.py list", file=sys.stderr)
+        print(f"then run scripts/ns_model_config.py init {root}", file=sys.stderr)
+        return 2
+    if not matched.get("supportedDirectApi"):
+        print(f"configured model exists but is not direct-API compatible: {model_ref} (api={matched.get('api')})", file=sys.stderr)
+        print(f"hint: run scripts/ns_model_config.py init {root}", file=sys.stderr)
+        return 2
+    print(json.dumps({
+        "configPath": str(path),
+        "status": "ok",
+        "configuredModel": model_ref,
+        "resolvedModel": matched["full"],
+        "baseUrl": matched.get("baseUrl", ""),
+        "api": matched.get("api", ""),
+    }, ensure_ascii=False, indent=2))
+    return 0
+
+
 def show_project(root: Path) -> int:
     cfg, path = read_project_config(root)
     if not cfg:
@@ -208,10 +237,14 @@ def main() -> int:
     p_init.add_argument("--api-key-env", default=None)
     p_show = sub.add_parser("show")
     p_show.add_argument("project_dir")
+    p_validate = sub.add_parser("validate")
+    p_validate.add_argument("project_dir")
     args = ap.parse_args()
 
     if args.cmd == "show":
         return show_project(Path(args.project_dir).expanduser().resolve())
+    if args.cmd == "validate":
+        return validate_project(Path(args.project_dir).expanduser().resolve())
 
     rows = discover()
     if args.cmd == "list":

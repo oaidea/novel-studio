@@ -234,8 +234,9 @@ def main() -> int:
         if configured_model and not model:
             system_model = load_system_model(configured_model)
             if not system_model:
-                print(f"configured model not found in OpenClaw system models: {configured_model}", file=sys.stderr)
-                print("hint: run scripts/ns_model_config.py list, then scripts/ns_model_config.py init <project-dir>", file=sys.stderr)
+                print(f"configured model no longer exists in OpenClaw system models: {configured_model}", file=sys.stderr)
+                print("hint: run scripts/ns_model_config.py list", file=sys.stderr)
+                print(f"then run scripts/ns_model_config.py init {root}", file=sys.stderr)
                 return 2
             model = system_model["model"]
             base_url = base_url or system_model.get("baseUrl", "")
