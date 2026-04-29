@@ -1,6 +1,6 @@
 # Direct API Writing / 直连 API 写作通道
 
-> 用途：让 Novel Studio 在写作时使用独立的 OpenAI-compatible Chat Completions API 通道，由 NS 自己读取 input pack、组装请求、保存输出，避免当前聊天系统上下文污染写作资料。
+> 用途：让 Novel Studio 在写作时使用独立的 OpenAI-compatible Chat Completions / Anthropic Messages API 通道，由 NS 自己读取 input pack、组装请求、保存输出，避免当前聊天系统上下文污染写作资料。
 
 ---
 
@@ -36,6 +36,17 @@ NS 项目文件 → input pack → direct_api_writer.py → 指定模型 API →
 3. **输出旁路保存**：默认写入 `.novel-studio/outputs/`，不覆盖正文。
 4. **上下文可审计**：每次请求保存 manifest，记录实际带入哪些文件。
 5. **不自动发送真实请求**：真实 API 调用必须由操作者明确指定 `--execute`。
+
+---
+
+## 当前 direct writer 支持协议
+
+只支持两类核心协议：
+
+- `openai-completions` → `POST <baseUrl>/chat/completions`
+- `anthropic-messages` → `POST <baseUrl>/messages`
+
+其他协议（如 `openai-codex-responses` / `openai-responses` 等）明确不支持，validate 或执行时会要求重新选择模型。
 
 ---
 

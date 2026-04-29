@@ -27,7 +27,7 @@ DEFAULT_CONFIG_PATHS = [
     Path("/root/.openclaw/agents/main/agent/models.json"),
     Path("/root/.openclaw/openclaw.json"),
 ]
-SUPPORTED_API = {"openai-completions"}
+SUPPORTED_API = {"openai-completions", "anthropic-messages"}
 KEY_ENV_PREFIX = "NOVEL_STUDIO_API_KEY_"
 
 

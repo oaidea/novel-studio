@@ -33,7 +33,7 @@ import time
 DEFAULT_API_KEY_ENV = "NOVEL_STUDIO_API_KEY"
 DEFAULT_BASE_URL_ENV = "NOVEL_STUDIO_BASE_URL"
 DEFAULT_MODEL_ENV = "NOVEL_STUDIO_MODEL"
-SUPPORTED_API = {"openai-completions"}
+SUPPORTED_API = {"openai-completions", "anthropic-messages"}
 
 
 @dataclass
@@ -220,6 +220,59 @@ def chat_completions(base_url: str, api_key: str, payload: dict, timeout: int) -
         raise RuntimeError(f"HTTP {e.code}: {body[:2000]}") from e
 
 
+
+
+def anthropic_messages_payload(model: str, messages: list[dict], temperature: float, max_tokens: int) -> dict:
+    system = ""
+    user_messages = []
+    for msg in messages:
+        if msg.get("role") == "system":
+            system = (system + "\n\n" + msg.get("content", "")).strip()
+        else:
+            user_messages.append(msg)
+    return {
+        "model": model,
+        "system": system,
+        "messages": user_messages,
+        "temperature": temperature,
+        "max_tokens": max_tokens,
+    }
+
+
+def anthropic_messages(base_url: str, api_key: str, payload: dict, timeout: int) -> dict:
+    url = base_url.rstrip("/") + "/messages"
+    data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+    req = request.Request(
+        url,
+        data=data,
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {api_key}",
+            "x-api-key": api_key,
+            "anthropic-version": "2023-06-01",
+        },
+        method="POST",
+    )
+    try:
+        with request.urlopen(req, timeout=timeout) as resp:
+            body = resp.read().decode("utf-8")
+            return json.loads(body)
+    except error.HTTPError as e:
+        body = e.read().decode("utf-8", errors="replace")
+        raise RuntimeError(f"HTTP {e.code}: {body[:2000]}") from e
+
+
+def extract_response_text(api: str, response: dict) -> str:
+    if api == "openai-completions":
+        return response.get("choices", [{}])[0].get("message", {}).get("content", "")
+    if api == "anthropic-messages":
+        parts = []
+        for item in response.get("content", []) or []:
+            if isinstance(item, dict) and item.get("type") == "text":
+                parts.append(item.get("text", ""))
+        return "".join(parts)
+    return ""
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("project_dir")
@@ -305,12 +358,19 @@ def main() -> int:
     messages = build_messages(chapter_id, project_name, included, args.prompt_profile, args.instruction)
     resolved_model_config = system_model.get("modelConfig") if 'system_model' in locals() and system_model else None
     resolved_provider_config = system_model.get("providerConfig") if 'system_model' in locals() and system_model else None
-    payload = {
-        "model": model,
-        "messages": messages,
-        "temperature": args.temperature,
-        "max_tokens": args.max_tokens,
-    }
+    api = (resolved_model_config or {}).get("api") or (system_model.get("api") if 'system_model' in locals() and system_model else "openai-completions")
+    if api == "openai-completions":
+        payload = {
+            "model": model,
+            "messages": messages,
+            "temperature": args.temperature,
+            "max_tokens": args.max_tokens,
+        }
+    elif api == "anthropic-messages":
+        payload = anthropic_messages_payload(model, messages, args.temperature, args.max_tokens)
+    else:
+        print(f"unsupported direct API protocol: {api}", file=sys.stderr)
+        return 2
 
     out_dir = root / ".novel-studio" / "outputs"
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -331,6 +391,7 @@ def main() -> int:
         "includedFiles": [{"path": item.rel, "chars": item.chars} for item in included],
         "promptProfile": args.prompt_profile,
         "model": payload["model"],
+        "api": api,
         "configuredModel": direct_cfg.get("model") if isinstance(direct_cfg, dict) else None,
         "resolvedModelConfig": resolved_model_config,
         "resolvedProviderConfig": resolved_provider_config,
@@ -365,8 +426,13 @@ def main() -> int:
 
     started = time.time()
     try:
-        response = chat_completions(base_url, api_key, payload, args.timeout)
-        content = response.get("choices", [{}])[0].get("message", {}).get("content", "")
+        if api == "openai-completions":
+            response = chat_completions(base_url, api_key, payload, args.timeout)
+        elif api == "anthropic-messages":
+            response = anthropic_messages(base_url, api_key, payload, args.timeout)
+        else:
+            raise RuntimeError(f"unsupported direct API protocol: {api}")
+        content = extract_response_text(api, response)
         if not content:
             content = json.dumps(response, ensure_ascii=False, indent=2)
         output_path.write_text(content, encoding="utf-8")
