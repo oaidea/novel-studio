@@ -46,6 +46,7 @@
 8. **学习模式**：写作能力诊断、训练计划、技巧反打到当前项目
 9. **风格库模式**：调用已沉淀的风格参考卡，生成可执行风格约束与 prompt 模板
 10. **项目治理模式**：整理小说项目结构、拆分设定层级、建立对象卡、变化记录、命名规范与入口层级
+11. **镜头跟随模式**：为章节 / 场景建立 POV 跟随、感知顺序、镜头锚点与信息边界，检查上帝视角抢跑和镜头乱跳
 
 **默认规则：**
 - 不跨模式乱跳。
@@ -54,6 +55,7 @@
 - 若用户要“学习写作 / 提升写作能力 / 制定训练计划”，进入**学习模式**，并要求每轮学习都附带项目内应用任务，避免纯理论空转。
 - 若用户要“拆某种写法 / 提炼某作者或某作品风格 / 生成风格模板 / 放进风格库”，进入**风格库模式**。
 - 若用户要“整理小说项目 / 清理仓库结构 / 把设定和卡片分层 / 建变化记录 / 统一命名规范 / 做创作工作室逻辑”，进入**项目治理模式**。
+- 若用户要“镜头跟随 / 视角跟随 / POV 检查 / 镜头别乱跳 / 让读者跟人物一起发现 / 不要上帝视角抢跑”，进入**镜头跟随模式**。
 - 若用户要“确定章节框架后尽量不回读前文全文 / 用卡片和摘要来写 / 降低 token 消耗”，进入**chapter packet / packet-first 写作策略**。
 - 若用户要“先根据上一章来推测下一章会出现的人物、空间、时间、事件，再制定本章目的与框架”，也进入**chapter packet / packet-first 写作策略**。
 - 若用户要“为单个小说项目建立统一写作风格卡 / 避免章节风格脱离整部作品”，进入**项目风格卡策略**。
@@ -401,6 +403,7 @@ novels/<项目名>/
 - `scripts/writeback_sync.py`：为章节回写生成 checklist scaffold
 - `scripts/index_refresh.py`：初始化 / 刷新活动索引 scaffold
 - `scripts/style_check.py`：为单章生成风格一致性检查 scaffold
+- `scripts/camera_follow_check.py`：轻量检查镜头跟随叙述风险（抽象气氛词、上帝视角抢跑、感知锚点不足、疑似 POV 发散）
 - `scripts/workflow_runner.py`：串行触发最小 workflow chain（支持 startup / style / style-full / chapter-full / writeback / refresh / deps / deps-all / doctor / full 模式）
 
 ---
@@ -615,6 +618,7 @@ novels/<项目名>/
 - “写第 5 章” → 章节模式
 - “看看最近节奏” → 连载模式
 - “这章有没有 bug” → 审校模式
+- “镜头跟着主角走 / 检查 POV / 不要上帝视角 / 让读者跟人物一起发现” → 镜头跟随模式
 - “把这段改得自然点” → 润色模式
 - “帮我做写作学习计划 / 我现在最该学什么” → 学习模式
 - “帮我拆《三体》风格 / 做成风格卡 / 存进风格库 / 生成风格提示词” → 风格库模式
@@ -648,6 +652,8 @@ novels/<项目名>/
 - `references/chapter-review-template.md`：章节审核报告模板
 - `references/chapter-summary-template.md`：章节元数据 / summary 模板
 - `references/humanize-style-guide.md`：去AI味写作综合指南（规则+黑名单+改稿流程+提示词模板）
+- `references/camera-follow-narration.md`：镜头跟随叙述规则（POV 跟随、感知顺序、信息边界、审校清单）
+- `references/templates/camera-follow-task-template.md`：镜头跟随任务书模板
 - `references/faction-naming-guide.md`：派/帮/教/宗/门组织命名规则卡
 - `references/writing-study-plan.md`：写作学习计划与训练模式参考
 - `references/style-library-index.md`：风格库索引
