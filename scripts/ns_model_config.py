@@ -47,6 +47,28 @@ def providers_from_config(data: dict) -> dict:
     return {}
 
 
+def inherited_model_config(provider_id: str, provider: dict, model: dict) -> dict:
+    """Return effective model config: provider-level non-secret fields inherited by model."""
+    inherited = {
+        k: v
+        for k, v in provider.items()
+        if k not in {"apiKey", "models"}
+    }
+    inherited["provider"] = provider_id
+    inherited.update(model)
+    inherited["api"] = model.get("api") or provider.get("api") or inherited.get("api", "")
+    inherited["baseUrl"] = (
+        model.get("baseUrl")
+        or model.get("baseURL")
+        or model.get("base_url")
+        or provider.get("baseUrl")
+        or provider.get("baseURL")
+        or provider.get("base_url")
+        or inherited.get("baseUrl", "")
+    )
+    return inherited
+
+
 def aliases_from_config(data: dict) -> dict:
     out = {}
     agents = data.get("agents") if isinstance(data.get("agents"), dict) else {}
@@ -79,27 +101,26 @@ def discover() -> list[dict]:
                 model_id = m.get("id")
                 if not model_id:
                     continue
-                api = m.get("api") or provider_api
+                effective_config = inherited_model_config(provider_id, provider, m)
+                api = effective_config.get("api", "")
                 full = f"{provider_id}/{model_id}"
-                key = (full, base_url, api)
+                key = (full, effective_config.get("baseUrl", ""), api)
                 if key in seen:
                     continue
                 seen.add(key)
                 supported = api in SUPPORTED_API and "image" not in str(model_id).lower()
-                model_config = dict(m)
-                model_config["api"] = api
                 rows.append({
                     "full": full,
                     "provider": provider_id,
                     "model": model_id,
                     "name": m.get("name") or model_id,
                     "alias": next((a for a, target in aliases.items() if target == full), ""),
-                    "baseUrl": base_url,
-                    "api": api,
+                    "baseUrl": effective_config.get("baseUrl", ""),
+                    "api": effective_config.get("api", ""),
                     "supportedDirectApi": supported,
-                    "contextWindow": m.get("contextWindow"),
-                    "maxTokens": m.get("maxTokens"),
-                    "modelConfig": model_config,
+                    "contextWindow": effective_config.get("contextWindow"),
+                    "maxTokens": effective_config.get("maxTokens"),
+                    "modelConfig": effective_config,
                     "providerConfig": {k: v for k, v in provider.items() if k not in {"apiKey", "models"}},
                     "source": str(cfg),
                 })

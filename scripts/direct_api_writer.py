@@ -64,6 +64,28 @@ def providers_from_config(data: dict) -> dict:
     return {}
 
 
+def inherited_model_config(provider_id: str, provider: dict, model: dict) -> dict:
+    """Return effective model config: provider-level non-secret fields inherited by model."""
+    inherited = {
+        k: v
+        for k, v in provider.items()
+        if k not in {"apiKey", "models"}
+    }
+    inherited["provider"] = provider_id
+    inherited.update(model)
+    inherited["api"] = model.get("api") or provider.get("api") or inherited.get("api", "")
+    inherited["baseUrl"] = (
+        model.get("baseUrl")
+        or model.get("baseURL")
+        or model.get("base_url")
+        or provider.get("baseUrl")
+        or provider.get("baseURL")
+        or provider.get("base_url")
+        or inherited.get("baseUrl", "")
+    )
+    return inherited
+
+
 def load_system_model(model_ref: str) -> dict | None:
     config_paths = [
         Path("/root/.openclaw/agents/main/agent/models.json"),
@@ -86,15 +108,14 @@ def load_system_model(model_ref: str) -> dict | None:
                 full = f"{provider_id}/{m['id']}"
                 if model_ref not in {full, m["id"]}:
                     continue
-                model_config = dict(m)
-                model_config["api"] = m.get("api") or provider_api
+                effective_config = inherited_model_config(provider_id, provider, m)
                 return {
                     "provider": provider_id,
                     "model": m["id"],
                     "modelFull": full,
-                    "baseUrl": base_url,
-                    "api": m.get("api") or provider_api,
-                    "modelConfig": model_config,
+                    "baseUrl": effective_config.get("baseUrl", ""),
+                    "api": effective_config.get("api", ""),
+                    "modelConfig": effective_config,
                     "providerConfig": {k: v for k, v in provider.items() if k not in {"apiKey", "models"}},
                     "source": str(cfg_path),
                 }
