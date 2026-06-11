@@ -1,13 +1,25 @@
 # Scripts Index
 
 当前脚本：
+- `scripts/ai_scoring.py`：AI味评分引擎，0-10 分三维度分段量化评估；可独立 CLI 使用或作为 Python 模块导入；支持去AI味前后对比评分
+- `scripts/humanize_pass.py`：去AI味辅助工具；内置 AI 评分引擎，自动输出去AI味前后对比（v3 2026-06-11）
 - `scripts/ns_history.py`：管理创作历史记录（record/list/view/delete），每次产生新内容的操作自动记录创作目的、模型信息和生成结果
+- `scripts/import_legacy_project.py`：扫描旧小说项目目录，识别章节/设定/大纲/时间线等资产，生成导入 manifest / report；当前已支持 `--apply-kernel-only`，可安全补入最小 NS kernel 壳而不迁移旧文件
+- `scripts/discover_legacy_chapters.py`：扫描旧项目中的章节候选文件，推断 chapter id / title / status，生成 chapter-meta seed 与 discovery report；v0.1 只编目，不迁移旧文件
+- `scripts/build_chapter_meta_draft.py`：把 `chapter-meta-seed.json` 转成可审阅的 `chapter-meta` draft，并标记新章节、冲突项与低置信度项；v0.1 不覆盖正式 `chapter-meta.json`
+- `scripts/merge_chapter_meta_draft.py`：把 `chapter-meta-draft.json` 以**保守安全规则**并入正式 `chapter-meta.json`；默认跳过 `conflict-existing` 与 `low-confidence`，可显式放宽
 - `scripts/init_novel_project.py`：初始化 layered / packet-first 项目骨架
-- `scripts/chapter_startup.py`：为新章节生成 packet 与启动清单骨架
+- `scripts/chapter_startup.py`：为新章节生成 packet 与启动清单骨架（当前 packet 已扩展物品、片场/演员/化妆/动作/台词/摄影机/分镜等场景资源入口，并可自动补资源卡模板）
 - `scripts/extract_project_style.py`：为项目生成母风格卡 scaffold
 - `scripts/build_style_packet.py`：为单章生成风格调用说明 scaffold
 - `scripts/build_object_state_summary.py`：为单章生成对象状态摘要 scaffold
-- `scripts/build_input_pack.py`：为单章生成模型极简版 / 模型标准版 / 人工审阅版输入包
+- `scripts/build_task_card.py`：为单章生成任务卡（当前章任务、上一章承接、对象范围、停点与禁止事项）
+- `scripts/build_input_pack.py`：为单章生成模型极简版 / 模型标准版 / 人工审阅版输入包（当前已自动接入 task card；标准包 / 审阅包默认带 rolling context）
+- `scripts/build_rolling_context.py`：生成滚动上下文（最近章节摘要 / open threads / current conflicts），用于增强防遗忘承接
+- `scripts/build_context_cards.py`：按当前章 packet 的对象清单收集相关角色卡 / 角色时间线状态卡 / 时间线卡 / 空间卡 / 物品卡 / 上一章承接文件
+- `scripts/build_scene_plan.py`：把一章拆成多个场景调度单（片场 / 演员 / 化妆 / 动作 / 台词 / 摄影机 / 分镜），并读取 scene / camera / storyboard / action / dialogue 资源卡回填每场的进入点、转折点、退出点与产出目标
+- `scripts/build_scene_resource_cards.py`：按当前章 packet 中的场景资源入口自动补 scene / camera / storyboard / action / dialogue 资源卡模板
+- `scripts/workflow_runner.py ... cinematic`：统一生成电影化 scene plan 入口；适合把 chapter packet 直接升级成章节调度层
 - `scripts/writeback_sync.py`：为章节回写生成 checklist scaffold
 - `scripts/index_refresh.py`：初始化 / 刷新活动索引 scaffold（含 clips）
 - `scripts/style_check.py`：为单章生成风格一致性检查 scaffold
@@ -22,6 +34,39 @@
 - `scripts/consistency_audit.py`：审计 state / chapter-meta / chapter files / packet-first 产物是否互相一致
 - `scripts/naming_lint.py`：审计文件命名是否出现状态塞进文件名、final-v2 漂移、对象区非 kebab-case 等命名坏味道
 - `scripts/workflow_runner.py`：串行触发最小 workflow chain
+- `scripts/project_governance_panel.py`：项目治理/管理面板，聚合 progress / health / session / recent history，方便一眼看当前该管什么
+- `scripts/resume_point.py`：快速回到停留处，告诉你上次停在哪、建议先看哪些文件
+- `scripts/sync_three_act_nine_thread.py`：把章节 packet 中的所属幕 / 主推线 / 轻触线 / 线索目标回写到项目结构文件与 chapter-meta
+- `scripts/workflow_simulation.py`：模拟整部书从章节启动 → chapter-full → cinematic → overview → history → progress board 的测试链路
+- `scripts/promote_chapter.py`：把章节从 draft / revision 推进到 candidate，或从 candidate 推进到 published，并同步状态与历史；**发布前必须先进入 candidate，不允许跳级**
+- `scripts/build_dialogue_boundary_cards.py`：按章节 packet 中的人物清单自动补角色台词边界卡，固定说话方式与禁止越权台词
+- `scripts/build_chapter_sections.py`：为一章生成 section 级整理骨架，把场景/线索/台词/边界切成更小工作切片
+- `scripts/build_section_input_pack.py`：按单个 section 生成模型输入包，只允许处理当前分节的目标与边界
+- `scripts/build_dialogue_task_pack.py`：按单个角色生成台词任务包，把角色说话边界单独交给模型
+- `scripts/build_thread_push_pack.py`：按单条线生成推进包，限制模型只强推进指定线，避免顺手扩散
+- `scripts/execute_section_write.py`：一键用 section pack 接 direct writer，默认 dry-run
+- `scripts/execute_dialogue_write.py`：一键用 dialogue pack 接 direct writer，默认 dry-run
+- `scripts/execute_thread_write.py`：一键用 thread pack 接 direct writer，默认 dry-run
+- `scripts/execute_slice.py`：统一切片执行分发器；按 section / dialogue / thread 选择后端脚本
+- `scripts/slice_history_view.py`：查看切片级历史（section_write / dialogue_write / thread_write），避免与整章 history 混在一起
+- `scripts/apply_release_gate_preset.py`：把预设 gate policy 模板应用到项目，快速切换 strict-webnovel / cinematic-heavy / fast-serial / literary-loose 等标准
+- `scripts/assemble_chapter.py`：把 section 级 system-task 输出按章节顺序装配成 candidate chapter，并生成 assembly manifest / report；v0.1 暂不自动并入 dialogue / thread 结果
+- `scripts/writeback_from_section.py`：从 section 输出与 section scaffold 生成结构化 writeback draft / manifest，先沉淀“状态变更草稿”，v0.1 不直接修改项目状态文件
+- `scripts/multichapter_thread_review.py`：按章节范围 + 指定线名生成**多章多线审稿报告**，聚合 chapter-meta / packet / summary / history / deps 信号，检查断推、只轻触、伏笔未回收等问题
+- `scripts/build_multichapter_review_pack.py`：把结构化跨章审稿结果打包成可直接喂模型的**多章多线语义审稿包**，聚合 summaries / packet 摘录 / report 摘录 / chapter body 摘录，并内置固定输出模板
+- `scripts/execute_multichapter_review.py`：执行多章多线语义审稿；direct 模式走 `direct_api_writer.py`，system 模式生成 durable brief / task stub，并强制遵守固定模板
+- `scripts/extract_multichapter_review_sidecar.py`：从多章多线语义审稿结果中提取 machine-readable sidecar JSON，沉淀 overallVerdict / threadFindings / chapterRatings / priorities / patchTargets / actionItems
+- `scripts/generate_multichapter_action_plan.py`：从多章多线语义审稿 sidecar 生成章节级 action plan，给出 patch / rewrite 轨道、scope 与建议命令
+- `scripts/realize_multichapter_action_plan.py`：把 action plan 进一步落成 patch brief / revision brief 等工作文件；只生成 scaffold，不直接改 live 正文
+- `scripts/project_governance_panel.py`：项目治理/管理面板，聚合 progress / health / session / recent history，并显示最近一次多章语义审稿与 action plan 的总评、优先级、补线建议和下一步推荐动作
+- `scripts/workflow_runner.py ... multichapter-review-full`：一键串起结构化跨章审稿 → 语义审稿包 → 语义审稿执行
+- `scripts/workflow_runner.py ... multichapter-review-sidecar`：从既有多章语义审稿结果中提取 sidecar JSON
+- `scripts/workflow_runner.py ... multichapter-review-full-sidecar`：一键串起结构化跨章审稿 → 语义审稿包 → 语义审稿执行 → sidecar 提取
+- `scripts/rewrite_chapter.py`：为现有章节创建 revision 分支副本，适合大修 / 重写 / 结构调整
+- `scripts/patch_chapter.py`：生成局部修补任务简报，适合小范围改段/改 scene，不直接扩散成整章重写
+- `scripts/revise_from_history.py`：从历史记录抽出某一版生成 revisions/ 工作副本，适合回到旧版本继续修
+- `scripts/history_diff.py`：比较两个历史版本，或比较历史版本与当前 live 文件，用于回溯审查
+- `scripts/history_rollback_preview.py`：从历史记录生成 rollback preview，不直接覆盖 live 文件
 - `scripts/ns_session.py`：项目级会话历史与状态保护，支持断点恢复（start/complete/fail/status/clear/global-last）
 - `scripts/clip_manager.py`：创建 / 列表 / 查看 / 更新 / 状态流转 / merge Clip 的最小管理脚本
 - `scripts/chapter_overview.py`：生成单章 overview，汇总 chapter files + clips + packet-first 产物
@@ -31,7 +76,11 @@
 - `workflow_runner.py ... chapter-full` 当前会自动触发 chapter overview + clip stats sync
 
 当前状态：
+- 已提供旧项目接管最小闭环：`import_legacy_project.py` → `discover_legacy_chapters.py` → `build_chapter_meta_draft.py` → `merge_chapter_meta_draft.py`
+- `merge_chapter_meta_draft.py` 默认采用保守落库策略：不自动并入冲突项与低置信度项，避免旧项目接管时误污染正式章节元数据
 - 已提供第一版 scaffold / 轻量实用工具混合层
 - 已具备最小 smoke regression，帮助防止脚手架、doctor、chapter-full 主链路再次漂移
 - `workflow_runner.py ... doctor` 当前会同时跑 governance audit + consistency audit + naming lint
+- `workflow_runner.py ... chapter-full` 当前会自动写 readiness report，并显示 cinematic layer / scene plan / scene-camera-storyboard 资源匹配状态
+- `workflow_runner.py ... cinematic` 当前可作为电影化工作系统统一入口
 - 后续可继续扩展 link check / true style extraction / true index refresh / full workflow runner / deeper governance doctor
